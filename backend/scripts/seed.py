@@ -1,6 +1,5 @@
 from app.db.graph import graph_db
 
-
 TEAMS = [
     {"team_id": "TEAM001", "name": "Backend Team", "description": "Backend services and APIs"},
     {"team_id": "TEAM002", "name": "Frontend Team", "description": "Web frontend development"},

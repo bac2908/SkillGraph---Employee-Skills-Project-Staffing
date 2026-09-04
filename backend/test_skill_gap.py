@@ -1,7 +1,6 @@
 from app.db.graph import graph_db
 from app.services.skill_gap_service import SkillGapService
 
-
 PROJECT_ID = "PROJ001"
 
 EXPECTED_SKILLS = {

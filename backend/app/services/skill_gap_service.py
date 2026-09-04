@@ -1,8 +1,10 @@
+from app.core.exceptions import ResourceNotFoundError
 from app.repositories import project_repository
 
 
-class ProjectNotFoundError(ValueError):
-    pass
+class ProjectNotFoundError(ResourceNotFoundError):
+    def __init__(self, project_id: str) -> None:
+        super().__init__("Project", project_id)
 
 
 class SkillGapService:
@@ -11,9 +13,7 @@ class SkillGapService:
             raise ValueError("project_id is required.")
 
         if not project_repository.project_exists(project_id):
-            raise ProjectNotFoundError(
-                f"Project '{project_id}' does not exist."
-            )
+            raise ProjectNotFoundError(project_id)
 
         required_skills = project_repository.get_required_skills(project_id)
         team_skill_levels = project_repository.get_team_skill_levels(project_id)

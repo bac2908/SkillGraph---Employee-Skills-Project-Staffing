@@ -1,16 +1,25 @@
 from app.db.graph import graph_db
 
-
 CONSTRAINTS = {
     "employee_employee_id_unique": """
         CREATE CONSTRAINT employee_employee_id_unique IF NOT EXISTS
         FOR (employee:Employee)
         REQUIRE employee.employee_id IS UNIQUE
     """,
+    "employee_email_unique": """
+        CREATE CONSTRAINT employee_email_unique IF NOT EXISTS
+        FOR (employee:Employee)
+        REQUIRE employee.email IS UNIQUE
+    """,
     "skill_skill_id_unique": """
         CREATE CONSTRAINT skill_skill_id_unique IF NOT EXISTS
         FOR (skill:Skill)
         REQUIRE skill.skill_id IS UNIQUE
+    """,
+    "skill_name_unique": """
+        CREATE CONSTRAINT skill_name_unique IF NOT EXISTS
+        FOR (skill:Skill)
+        REQUIRE skill.name IS UNIQUE
     """,
     "project_project_id_unique": """
         CREATE CONSTRAINT project_project_id_unique IF NOT EXISTS
