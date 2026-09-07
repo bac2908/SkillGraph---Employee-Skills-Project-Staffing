@@ -17,6 +17,10 @@ venv/
 # Frontend
 node_modules/
 .next/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+*.tsbuildinfo
 
 # OS
 .DS_Store

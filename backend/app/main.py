@@ -36,11 +36,25 @@ app = FastAPI(
             "description": "Skill catalogue management.",
         },
         {
+            "name": "employee skills",
+            "description": "Employee proficiency and experience management.",
+        },
+        {
             "name": "projects",
             "description": (
                 "Project management, skill-gap analysis, and staffing "
                 "recommendations."
             ),
+        },
+        {
+            "name": "project assignments",
+            "description": (
+                "Employee staffing with a strict 100% total allocation cap."
+            ),
+        },
+        {
+            "name": "project requirements",
+            "description": "Required project skills, levels, and priorities.",
         },
     ],
 )

@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
@@ -8,6 +10,7 @@ from app.core.exceptions import (
 from app.repositories.errors import RepositoryError
 
 DATABASE_UNAVAILABLE_MESSAGE = "The graph database is currently unavailable."
+logger = logging.getLogger(__name__)
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -34,8 +37,12 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(RepositoryError)
     async def repository_error_handler(
         _: Request,
-        __: RepositoryError,
+        exc: RepositoryError,
     ) -> JSONResponse:
+        logger.error(
+            "Graph repository operation failed.",
+            exc_info=(type(exc), exc, exc.__traceback__),
+        )
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={"detail": DATABASE_UNAVAILABLE_MESSAGE},

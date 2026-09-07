@@ -29,3 +29,19 @@ class ResourceInUseError(ResourceConflictError):
             f"{resource} '{resource_id}' is connected by "
             f"{relationship_count} relationship(s) and cannot be deleted."
         )
+
+
+class AllocationExceededError(ResourceConflictError):
+    def __init__(
+        self,
+        employee_id: str,
+        project_id: str,
+        allocated_elsewhere: int,
+        requested: int,
+    ) -> None:
+        proposed_total = allocated_elsewhere + requested
+        super().__init__(
+            f"Employee '{employee_id}' would reach {proposed_total}% total "
+            f"allocation: {allocated_elsewhere}% outside Project "
+            f"'{project_id}' plus {requested}% requested. The maximum is 100%."
+        )

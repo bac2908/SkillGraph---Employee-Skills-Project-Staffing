@@ -86,7 +86,7 @@ EMPLOYEE_SKILLS = [
 ]
 
 WORK_ASSIGNMENTS = [
-    {"employee_id": "EMP002", "project_id": "PROJ001", "role": "Backend Developer", "allocation": 100},
+    {"employee_id": "EMP002", "project_id": "PROJ001", "role": "Backend Developer", "allocation": 80},
     {"employee_id": "EMP003", "project_id": "PROJ001", "role": "Frontend Developer", "allocation": 100},
     {"employee_id": "EMP005", "project_id": "PROJ001", "role": "Backend Developer", "allocation": 80},
     {"employee_id": "EMP001", "project_id": "PROJ002", "role": "Backend Developer", "allocation": 80},
@@ -238,6 +238,14 @@ MATCH (bac:Employee {employee_id: $bac_id})
       (project:Project {project_id: $project_id})
 RETURN count(assignment) AS count
 """
+OVERALLOCATED_EMPLOYEES_QUERY = """
+MATCH (employee:Employee)-[assignment:WORKS_ON]->(:Project)
+WITH employee, sum(assignment.allocation) AS total_allocation
+WHERE total_allocation > 100
+RETURN employee.employee_id AS employee_id,
+       total_allocation
+ORDER BY employee.employee_id
+"""
 
 
 class SeedValidationError(RuntimeError):
@@ -360,6 +368,17 @@ def _validate_docker_gap_scenario(session):
         raise SeedValidationError("EMP001 must not be assigned to PROJ001.")
 
 
+def _validate_allocation_limits(session):
+    overallocated = [
+        record.data()
+        for record in session.run(OVERALLOCATED_EMPLOYEES_QUERY)
+    ]
+    if overallocated:
+        raise SeedValidationError(
+            f"Employee allocation exceeds 100%: {overallocated}"
+        )
+
+
 def _validate_seed(session, summary):
     _validate_expected_counts(summary)
     _validate_bac_skills(session)
@@ -367,6 +386,7 @@ def _validate_seed(session, summary):
     _validate_ecommerce_members(session)
     _validate_collaboration_traversal(session)
     _validate_docker_gap_scenario(session)
+    _validate_allocation_limits(session)
 
 
 def _print_summary(summary):
