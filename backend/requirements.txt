@@ -4,3 +4,4 @@ neo4j
 python-dotenv
 pydantic-settings
 email-validator
+pwdlib[argon2]>=0.3.0,<1

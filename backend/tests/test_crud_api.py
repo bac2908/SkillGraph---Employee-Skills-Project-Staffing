@@ -1,14 +1,12 @@
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from time import time_ns
 
 import pytest
-from fastapi.testclient import TestClient
-
-from app.main import app
 
 
 @pytest.mark.integration
-def test_crud_lifecycle_and_api_guards() -> None:
+def test_crud_lifecycle_and_api_guards(authenticated_client) -> None:
     suffix = str(time_ns())
     employee_id = f"EMP{suffix}"
     skill_id = f"SK{suffix}"
@@ -17,7 +15,7 @@ def test_crud_lifecycle_and_api_guards() -> None:
 
     created_paths: list[str] = []
     relationship_paths: list[str] = []
-    with TestClient(app) as client:
+    with nullcontext(authenticated_client) as client:
         try:
             assert client.get("/health").json() == {"status": "ok"}
 

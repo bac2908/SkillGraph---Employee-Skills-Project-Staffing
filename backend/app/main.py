@@ -1,8 +1,9 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
+from app.api.auth import router as auth_router
 from app.api.errors import register_exception_handlers
 from app.api.router import api_router
 from app.db.graph import graph_db
@@ -42,8 +43,7 @@ app = FastAPI(
         {
             "name": "projects",
             "description": (
-                "Project management, skill-gap analysis, and staffing "
-                "recommendations."
+                "Project management, skill-gap analysis, and staffing recommendations."
             ),
         },
         {
@@ -62,6 +62,17 @@ app = FastAPI(
 register_exception_handlers(app)
 
 
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Pragma"] = "no-cache"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "same-origin"
+    return response
+
+
 @app.get(
     "/health",
     response_model=HealthResponse,
@@ -73,3 +84,4 @@ def health_check() -> dict[str, str]:
 
 
 app.include_router(api_router)
+app.include_router(auth_router)

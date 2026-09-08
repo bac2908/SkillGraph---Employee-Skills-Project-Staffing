@@ -18,6 +18,23 @@ npm.cmd run dev
 Open <http://127.0.0.1:5173>. See [frontend setup and testing](docs/frontend.md)
 for configuration, architecture, and browser tests.
 
+## Login and access control
+
+The frontend is implemented: dashboard, employee/skill/project management,
+relationship editors, staffing, login, account security and user administration.
+All business APIs now require login. Admins manage accounts and catalogues;
+Managers write only to assigned projects; Viewers have read-only access.
+
+Create your first Admin interactively (no default credentials), from `backend`:
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.create_admin
+```
+
+See [authentication setup, permissions and deployment safeguards](docs/authentication.md).
+Account/session data lives in ignored `backend/data/auth.sqlite3`, separately
+from CognoDB. Do not delete it as cache or commit it to Git.
+
 ## Backend setup
 
 ```powershell
@@ -36,14 +53,21 @@ Initialize the graph and start the API:
 ```powershell
 python -m scripts.setup_schema
 python -m scripts.seed
-uvicorn app.main:app --reload
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-proxy-headers --reload
 ```
 
 Open Swagger UI at <http://127.0.0.1:8000/docs>.
+Business requests require the session cookie; writes also require the allowed
+Origin and X-CSRF-Token from `/api/auth/me`. The frontend handles these automatically.
 
 ## API endpoints
 
 - `GET /health`
+- `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`
+- `POST /api/auth/password`
+- `GET|POST /api/auth/users` (Admin)
+- `PATCH /api/auth/users/{user_id}` (Admin)
+- `POST /api/auth/users/{user_id}/password` (Admin)
 - `GET|POST /api/employees`
 - `GET|PATCH|DELETE /api/employees/{employee_id}`
 - `GET|POST /api/skills`
@@ -86,6 +110,7 @@ Install the development dependencies and run the full CRUD integration test:
 
 ```powershell
 pip install -r requirements-dev.txt
+pytest -m "not integration" -q
 pytest -m integration -q
 ruff check app tests scripts
 ```

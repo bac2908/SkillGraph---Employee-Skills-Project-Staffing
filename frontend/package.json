@@ -11,7 +11,10 @@
     "build": "node node_modules/typescript/bin/tsc --noEmit && node node_modules/vite/bin/vite.js build",
     "preview": "node node_modules/vite/bin/vite.js preview",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
+    "format": "node node_modules/prettier/bin/prettier.cjs --write src tests *.ts *.json index.html",
+    "format:check": "node node_modules/prettier/bin/prettier.cjs --check src tests *.ts *.json index.html",
     "test": "node node_modules/@playwright/test/cli.js test",
+    "test:auth-stack": "node node_modules/@playwright/test/cli.js test --config playwright.auth-stack.config.ts",
     "test:live": "node node_modules/@playwright/test/cli.js test --config playwright.live.config.ts"
   },
   "dependencies": {

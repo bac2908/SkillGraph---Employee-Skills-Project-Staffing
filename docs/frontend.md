@@ -11,7 +11,7 @@ Terminal 1:
 
 ```powershell
 cd backend
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-proxy-headers --reload
 ```
 
 Terminal 2:
@@ -23,6 +23,8 @@ npm.cmd run dev
 ```
 
 Mở <http://127.0.0.1:5173>. Nếu `node_modules` đã được cài, chỉ cần `npm.cmd run dev`.
+Lần đầu, tạo Admin bằng `python -m scripts.create_admin` trong backend;
+xem [hướng dẫn đăng nhập và phân quyền](authentication.md). Không có tài khoản mặc định.
 Lệnh npm gọi trực tiếp file JavaScript của công cụ để tương thích với đường dẫn
 Windows chứa dấu `&`. Không cần đổi tên thư mục dự án.
 
@@ -56,23 +58,31 @@ cấu hình proxy. Không đặt URI, tài khoản hay mật khẩu CognoDB tron
 `npm.cmd run build` tạo `dist/`; có thể kiểm tra bản build bằng
 `npm.cmd run preview` tại <http://127.0.0.1:4173>. Khi triển khai bản build cần
 reverse proxy `/api` đến FastAPI và fallback các route giao diện về `index.html`.
-Vite preview phục vụ kiểm tra cục bộ. Backend hiện chưa có authentication và
-authorization; cần hoàn thành hai phần đó trước khi mở chức năng ghi ra Internet.
+Vite preview phục vụ kiểm tra cục bộ. Backend đã bảo vệ API bằng session và
+phân quyền Admin/Manager/Viewer; cần cấu hình HTTPS, Secure cookie và origin
+production trước khi mở Internet. Xem [các giới hạn triển khai](authentication.md).
 
 ## Kiểm tra
 
 ```powershell
 cd frontend
 npm.cmd run typecheck
+npm.cmd run format:check
 npm.cmd run build
 npm.cmd test
+npm.cmd run test:auth-stack
 npm.cmd run test:live
 ```
 
 - `test`: chạy Microsoft Edge headless, mock API **chỉ trong test**, kiểm tra CRUD,
   quan hệ, allocation conflict, bàn phím, mobile và lỗi kết nối. Không ghi CognoDB.
-- `test:live`: backend phải đang chạy ở cổng 8000, có dữ liệu hiện hữu. Chỉ đọc API
-  từ giao diện thật, không tạo hay xóa dữ liệu.
+  Bao gồm kiểm tra tự động bằng axe cho dashboard, biểu mẫu và bảng phân công;
+  kiểm tra này không thay thế đánh giá khả năng truy cập thủ công toàn bộ ứng dụng.
+- `format`: định dạng mã nguồn bằng Prettier; `format:check`: kiểm tra định dạng.
+- `test:auth-stack`: FE và FastAPI thật, SQLite tạm; graph được stub, không kết nối CognoDB.
+- `test:live`: backend phải đang chạy ở cổng 8000, có dữ liệu và tài khoản hiện hữu.
+  Cấp `SKILLGRAPH_TEST_EMAIL`/`SKILLGRAPH_TEST_PASSWORD` bằng environment variables.
+  Thiếu tài khoản thì skip. Login/logout ghi phiên; các API nghiệp vụ chỉ được đọc.
 - Playwright dùng Edge đã có trên Windows, không tải thêm một bản Chromium.
   Máy không có Edge có thể đổi `channel` trong `playwright.config.ts` hoặc cài Edge.
 - Ảnh chụp và trace nằm trong `test-results/`, đã được Git bỏ qua.

@@ -2,10 +2,15 @@ import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mockApi } from './fixtures';
 
-test.beforeEach(async ({ page }) => { await mockApi(page); });
+test.beforeEach(async ({ page }) => {
+  await mockApi(page);
+});
 
-test('dashboard displays API metrics, switches project and opens staffing dialog', async ({ page }, info) => {
-  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+test('dashboard displays API metrics, switches project and opens staffing dialog', async ({
+  page,
+}, info) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Đúng người. Đúng cơ hội.' })).toBeVisible();
   await expect(page.locator('.stat-card').first().locator('strong')).toHaveText('12');
@@ -53,7 +58,8 @@ test('skill create, edit, search and delete remain in sync with the API', async 
 test('employee and project forms, pagination and filters work', async ({ page }) => {
   await page.goto('/employees');
   await expect(page.locator('tbody tr')).toHaveCount(10);
-  await page.getByLabel('Trang sau').click(); await expect(page.locator('tbody tr')).toHaveCount(2);
+  await page.getByLabel('Trang sau').click();
+  await expect(page.locator('tbody tr')).toHaveCount(2);
   await page.getByLabel('Lọc trạng thái').selectOption('AVAILABLE');
   await expect(page.locator('tbody tr')).toHaveCount(6);
   await page.getByRole('button', { name: 'Thêm nhân viên' }).click();
@@ -80,8 +86,15 @@ test('employee and project forms, pagination and filters work', async ({ page })
 
 test('employee skills and project requirements create, update and remove', async ({ page }) => {
   for (const kind of ['employee', 'project']) {
-    await page.goto(kind === 'employee' ? '/employees/EMP001' : '/projects/PROJ001?tab=requirements');
-    await page.getByRole('button', { name: kind === 'employee' ? 'Gán kỹ năng' : 'Thêm yêu cầu', exact: true }).click();
+    await page.goto(
+      kind === 'employee' ? '/employees/EMP001' : '/projects/PROJ001?tab=requirements',
+    );
+    await page
+      .getByRole('button', {
+        name: kind === 'employee' ? 'Gán kỹ năng' : 'Thêm yêu cầu',
+        exact: true,
+      })
+      .click();
     const dialog = page.getByRole('dialog');
     await dialog.getByLabel('Kỹ năng', { exact: false }).first().selectOption('SK007');
     await dialog.getByRole('button', { name: 'Lưu thay đổi' }).click();
@@ -106,8 +119,13 @@ test('server allocation conflict keeps form values and supports retry', async ({
   await dialog.getByLabel('Vai trò trong dự án').fill('Advisor');
   await dialog.getByLabel('Phân bổ (%)').fill('20');
   // Another request can consume capacity after the form fetched it.
-  await page.route('**/api/projects/PROJ001/assignments/EMP001', async route => {
-    if (route.request().method() === 'PUT') return route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ detail: 'Employee would exceed 100% allocation.' }) });
+  await page.route('**/api/projects/PROJ001/assignments/EMP001', async (route) => {
+    if (route.request().method() === 'PUT')
+      return route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({ detail: 'Employee would exceed 100% allocation.' }),
+      });
     return route.fallback();
   });
   await dialog.getByRole('button', { name: 'Lưu thay đổi' }).click();
@@ -130,21 +148,31 @@ test('mobile navigation, keyboard dialog and layout remain usable', async ({ pag
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.locator('.coverage-number')).toHaveText('80%');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
   await page.screenshot({ path: info.outputPath('dashboard-mobile.png'), fullPage: true });
   await page.getByLabel('Mở menu').click();
   await page.getByRole('navigation').getByRole('link', { name: 'Kỹ năng' }).click();
   await page.getByRole('button', { name: 'Thêm kỹ năng' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.keyboard.press('Tab');
-  expect(await page.evaluate(() => document.querySelector('dialog')?.contains(document.activeElement))).toBe(true);
+  expect(
+    await page.evaluate(() => document.querySelector('dialog')?.contains(document.activeElement)),
+  ).toBe(true);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).not.toBeVisible();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
 });
 
 test('backend failure is explicit, without fabricated dashboard data', async ({ page }) => {
-  await page.route('**/api/**', route => route.fulfill({ status: 503, body: 'Unavailable' }));
+  await page.route('**/api/**', (route) =>
+    route.request().url().includes('/api/auth/')
+      ? route.fallback()
+      : route.fulfill({ status: 503, body: 'Unavailable' }),
+  );
   await page.goto('/');
   await expect(page.getByRole('alert').first()).toContainText('Kiểm tra backend');
   await expect(page.locator('.stat-card').first().locator('strong')).toHaveText('—');
@@ -155,11 +183,40 @@ test('dashboard and form pass automated accessibility checks', async ({ page }) 
   await page.goto('/');
   await expect(page.locator('.candidate-card')).toHaveCount(2);
   const check = async () => {
-    const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
-    expect(result.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => ({ target: n.target, summary: n.failureSummary })) }))).toEqual([]);
+    const result = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .analyze();
+    if (result.violations.length) {
+      console.log(
+        JSON.stringify(
+          result.violations.map((v) => ({
+            id: v.id,
+            count: v.nodes.length,
+            nodes: v.nodes
+              .slice(0, 8)
+              .map((n) => ({ target: n.target, summary: n.failureSummary })),
+          })),
+          null,
+          2,
+        ),
+      );
+    }
+    expect(result.violations.map((v) => v.id)).toEqual([]);
   };
   await check();
   await page.goto('/employees');
   await page.getByRole('button', { name: 'Thêm nhân viên' }).click();
   await check();
+  await page.keyboard.press('Escape');
+  await page.goto('/projects/PROJ001');
+  await page.getByRole('tab', { name: 'Phân tích & gợi ý' }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('tab', { name: 'Đội ngũ' })).toBeFocused();
+  await expect(page.getByRole('tab', { name: 'Đội ngũ' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('row').filter({ hasText: 'An Nguyen' })).toBeVisible();
+  await check();
+  await page.keyboard.press('End');
+  await expect(page.getByRole('tab', { name: 'Yêu cầu kỹ năng' })).toBeFocused();
+  await page.keyboard.press('Home');
+  await expect(page.getByRole('tab', { name: 'Phân tích & gợi ý' })).toBeFocused();
 });
