@@ -211,6 +211,38 @@ export async function mockApi(
       )
         return json({ detail: 'Không có quyền.' }, 403);
     }
+    if (resource === 'dashboard' && method === 'GET') {
+      const capacity = allocationItems(employees).map((employee) => ({
+        employee_id: employee.employee_id,
+        name: employee.name,
+        title: employee.title,
+        total_allocation: employee.employee_total_allocation,
+        remaining_allocation: employee.employee_remaining_allocation,
+      }));
+      capacity.sort(
+        (a, b) =>
+          a.total_allocation - b.total_allocation ||
+          a.name.localeCompare(b.name) ||
+          a.employee_id.localeCompare(b.employee_id),
+      );
+      const defaults = [...projects].sort(
+        (a, b) =>
+          Number(b.status === 'ACTIVE') - Number(a.status === 'ACTIVE') ||
+          a.project_id.localeCompare(b.project_id),
+      );
+      return json({
+        generated_at: new Date().toISOString(),
+        summary: {
+          employee_count: employees.length,
+          available_employee_count: employees.filter((e) => e.status === 'AVAILABLE').length,
+          project_count: projects.length,
+          active_project_count: projects.filter((p) => p.status === 'ACTIVE').length,
+          skill_count: skills.length,
+        },
+        capacity: capacity.slice(0, 5),
+        default_project: defaults[0] || null,
+      });
+    }
     if (relation === 'skill-gap') return json(gap(id));
     if (relation === 'recommendations')
       return json({

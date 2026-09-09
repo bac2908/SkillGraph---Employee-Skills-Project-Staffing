@@ -1,16 +1,18 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowRight,
   BriefcaseBusiness,
+  ChevronDown,
   Layers3,
+  RefreshCw,
   Sparkles,
   Users,
   UserRoundCheck,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAll } from '../api';
-import { useCapacity } from '../hooks';
-import type { Candidate, Employee, Project, Skill } from '../types';
+import { useResource } from '../api';
+import type { Candidate, DashboardOverview, Project } from '../types';
 import {
   Avatar,
   Empty,
@@ -23,63 +25,51 @@ import {
 } from '../components/ui';
 import { CandidateSuggestions, SkillCoverage } from '../components/Analysis';
 import { AssignmentDialog } from '../components/Relations';
+import { ProjectPicker } from '../components/ProjectPicker';
 
 export function Dashboard() {
-  const employees = useAll<Employee>('employees');
-  const projects = useAll<Project>('projects');
-  const skills = useAll<Skill>('skills');
-  const capacity = useCapacity();
-  const [selected, setSelected] = useState('');
+  const overview = useResource<DashboardOverview>('/api/dashboard');
+  const client = useQueryClient();
+  const [selected, setSelected] = useState<Project | null>(null);
+  const [picking, setPicking] = useState(false);
   const [candidate, setCandidate] = useState<Candidate | null>(null);
-  const selectedProject =
-    projects.data?.find((p) => p.project_id === selected) ||
-    projects.data?.find((p) => p.status === 'ACTIVE') ||
-    projects.data?.[0];
-  const available = employees.data?.filter((e) => e.status === 'AVAILABLE') || [];
+  const selectedProject = selected || overview.data?.default_project;
+  const summary = overview.data?.summary;
   const stats = [
     {
       title: 'Nhân viên',
-      value: employees.data?.length,
+      value: summary?.employee_count,
       icon: Users,
       note: 'Những tài năng trong tổ chức',
       to: '/employees',
       tone: 'green',
-      error: employees.error,
     },
     {
       title: 'Sẵn sàng kết nối',
-      value: employees.data ? available.length : undefined,
+      value: summary?.available_employee_count,
       icon: UserRoundCheck,
       note: 'Theo trạng thái nhân viên',
       to: '/employees',
       tone: 'mint',
-      error: employees.error,
     },
     {
       title: 'Dự án đang chạy',
-      value: projects.data?.filter((p) => p.status === 'ACTIVE').length,
+      value: summary?.active_project_count,
       icon: BriefcaseBusiness,
-      note: `${projects.data?.length ?? '…'} dự án trong không gian`,
+      note: `${summary?.project_count ?? '…'} dự án trong không gian`,
       to: '/projects',
       tone: 'amber',
-      error: projects.error,
     },
     {
       title: 'Kỹ năng',
-      value: skills.data?.length,
+      value: summary?.skill_count,
       icon: Layers3,
       note: 'Nền tảng năng lực chung',
       to: '/skills',
       tone: 'blue',
-      error: skills.error,
     },
   ];
-  const freePeople = [...(employees.data || [])]
-    .sort(
-      (a, b) =>
-        (capacity.totals.get(a.employee_id) || 0) - (capacity.totals.get(b.employee_id) || 0),
-    )
-    .slice(0, 5);
+  const freePeople = overview.data?.capacity || [];
   return (
     <>
       <PageHeading
@@ -87,10 +77,21 @@ export function Dashboard() {
         title="Đúng người. Đúng cơ hội."
         description="Một góc nhìn rõ ràng để xây dựng những đội ngũ tốt hơn."
         action={
-          <Link className="button primary" to="/projects">
-            Khám phá dự án
-            <ArrowRight size={17} />
-          </Link>
+          <div className="dashboard-actions">
+            <button
+              type="button"
+              className="button secondary"
+              disabled={overview.isFetching}
+              onClick={() => void client.invalidateQueries({ queryKey: ['api'] })}
+            >
+              <RefreshCw size={16} className={overview.isFetching ? 'spin' : ''} />
+              Làm mới
+            </button>
+            <Link className="button primary" to="/projects">
+              Khám phá dự án
+              <ArrowRight size={17} />
+            </Link>
+          </div>
         }
       />
       <div className="welcome-banner">
@@ -123,23 +124,16 @@ export function Dashboard() {
                 <stat.icon size={20} />
               </span>
             </div>
-            <strong>{stat.error ? '—' : (stat.value ?? '…')}</strong>
+            <strong>{overview.error ? '—' : (stat.value ?? '…')}</strong>
             <p>
-              {stat.error ? 'Chưa tải được dữ liệu' : stat.note}
+              {overview.error ? 'Chưa tải được dữ liệu' : stat.note}
               <ArrowRight size={14} />
             </p>
           </Link>
         ))}
       </div>
-      {(employees.error || projects.error || skills.error) && (
-        <ErrorNotice
-          error={employees.error || projects.error || skills.error}
-          retry={() => {
-            void employees.refetch();
-            void projects.refetch();
-            void skills.refetch();
-          }}
-        />
+      {overview.error && (
+        <ErrorNotice error={overview.error} retry={() => void overview.refetch()} />
       )}
       <div className="dashboard-grid">
         <section className="panel focus-panel">
@@ -147,39 +141,37 @@ export function Dashboard() {
             title="Dự án trong tầm nhìn"
             detail="Nhận diện khoảng trống kỹ năng của đội ngũ."
             action={
-              <span className="live-label">
-                <i />
-                Dữ liệu hiện tại
-              </span>
+              overview.data &&
+              !overview.isError && (
+                <span className="live-label">
+                  Đã tải {new Date(overview.data.generated_at).toLocaleTimeString('vi-VN')}
+                </span>
+              )
             }
           />
-          {projects.isPending ? (
+          {overview.isPending ? (
             <Loading />
-          ) : projects.error ? (
-            <ErrorNotice error={projects.error} retry={() => void projects.refetch()} />
+          ) : overview.error ? (
+            <p className="dashboard-unavailable">Phân tích sẽ hiển thị khi tải lại thành công.</p>
           ) : selectedProject ? (
             <>
               <div className="project-picker">
                 <span className="project-mark">
                   <BriefcaseBusiness size={21} />
                 </span>
-                <label>
+                <div className="project-picker-selection">
                   <small>DỰ ÁN ĐANG XEM</small>
-                  <select
+                  <button
+                    type="button"
+                    className="project-picker-trigger"
                     aria-label="Chọn dự án phân tích"
-                    value={selectedProject.project_id}
-                    onChange={(e) => {
-                      setSelected(e.target.value);
-                      setCandidate(null);
-                    }}
+                    aria-haspopup="dialog"
+                    onClick={() => setPicking(true)}
                   >
-                    {projects.data?.map((p) => (
-                      <option value={p.project_id} key={p.project_id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <span>{selectedProject.name}</span>
+                    <ChevronDown size={16} />
+                  </button>
+                </div>
                 <Link aria-label="Mở chi tiết dự án" to={`/projects/${selectedProject.project_id}`}>
                   <ArrowRight size={20} />
                 </Link>
@@ -197,19 +189,19 @@ export function Dashboard() {
         <section className="panel capacity-panel">
           <SectionHeading
             title="Nhịp làm việc của đội ngũ"
-            detail="Tổng phân bổ trên tất cả dự án."
+            detail="5 người có mức phân bổ thấp nhất · tính trên tất cả dự án."
           />
-          {employees.isPending || capacity.isPending ? (
+          {overview.isPending ? (
             <Loading />
-          ) : employees.error || capacity.error ? (
-            <ErrorNotice error={employees.error || capacity.error} retry={capacity.retry} />
+          ) : overview.error ? (
+            <p className="dashboard-unavailable">Chưa có số liệu phân bổ đáng tin cậy.</p>
           ) : !freePeople.length ? (
             <Empty title="Chưa có nhân viên" />
           ) : (
             <>
               <div className="capacity-list">
                 {freePeople.map((employee, index) => {
-                  const used = capacity.totals.get(employee.employee_id) || 0;
+                  const used = employee.total_allocation;
                   return (
                     <Link
                       to={`/employees/${employee.employee_id}`}
@@ -220,7 +212,10 @@ export function Dashboard() {
                       <div>
                         <strong>{employee.name}</strong>
                         <small>{employee.title}</small>
-                        <Meter value={used} label={`Phân bổ ${employee.name}`} />
+                        <Meter
+                          value={Math.min(100, used)}
+                          label={`Phân bổ ${employee.name}: ${used}%`}
+                        />
                       </div>
                       <span className={used < 100 ? 'has-capacity' : ''}>{used}%</span>
                     </Link>
@@ -234,11 +229,21 @@ export function Dashboard() {
           )}
         </section>
       </div>
-      {selectedProject && (
+      {selectedProject && !overview.isError && (
         <CandidateSuggestions
           projectId={selectedProject.project_id}
           onAssign={setCandidate}
           compact
+        />
+      )}
+      {picking && selectedProject && (
+        <ProjectPicker
+          selectedId={selectedProject.project_id}
+          onSelect={(project) => {
+            setSelected(project);
+            setCandidate(null);
+          }}
+          onClose={() => setPicking(false)}
         />
       )}
       {candidate && selectedProject && (

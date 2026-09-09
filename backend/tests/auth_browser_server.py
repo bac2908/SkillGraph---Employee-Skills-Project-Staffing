@@ -12,7 +12,7 @@ os.environ["COGNODB_PASSWORD"] = "not-a-real-credential"
 def main():
     import uvicorn
 
-    from app.api import employees, projects, skills
+    from app.api import dashboard, employees, projects, skills
     from app.api.auth_dependencies import get_auth_store
     from app.core.config import settings
     from app.main import app
@@ -21,13 +21,27 @@ def main():
     settings.auth_cookie_secure = False
     settings.auth_allowed_origins = ["http://127.0.0.1:5174"]
 
-    # Only the graph list services are stubbed. Authentication is the real implementation.
+    # Graph reads are stubbed. Authentication is the real implementation.
     def empty_list(search, state, limit, offset):
         return {"items": [], "total": 0, "limit": limit, "offset": offset}
 
     employees.service.list = empty_list
     projects.project_service.list = empty_list
     skills.service.list = empty_list
+    from datetime import UTC, datetime
+
+    dashboard.service.overview = lambda: {
+        "generated_at": datetime.now(UTC),
+        "summary": {
+            "employee_count": 0,
+            "available_employee_count": 0,
+            "project_count": 0,
+            "active_project_count": 0,
+            "skill_count": 0,
+        },
+        "capacity": [],
+        "default_project": None,
+    }
     with TemporaryDirectory(prefix="skillgraph-auth-browser-") as directory:
         store = AuthStore(Path(directory) / "auth.sqlite3")
         store.create_user(

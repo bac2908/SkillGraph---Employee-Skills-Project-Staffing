@@ -46,6 +46,10 @@ test('real FastAPI cookie + CSRF + account lifecycle through Vite proxy', async 
   await page.getByLabel('Mật khẩu', { exact: true }).fill('Browser-only personal password!');
   await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Đúng người. Đúng cơ hội.' })).toBeVisible();
+  await expect(page.locator('.stat-card strong')).toHaveText(['0', '0', '0', '0']);
+  const overview = await page.request.get('/api/dashboard');
+  expect(overview.status()).toBe(200);
+  expect((await overview.json()).default_project).toBeNull();
   const me = await (await page.request.get('/api/auth/me')).json();
   const denied = await page.request.post('/api/employees', {
     headers: { Origin: origin, 'X-CSRF-Token': me.csrf_token },
@@ -55,4 +59,5 @@ test('real FastAPI cookie + CSRF + account lifecycle through Vite proxy', async 
   expect((await page.request.get('/api/auth/users')).status()).toBe(403);
   await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
   expect((await page.request.get('/api/employees')).status()).toBe(401);
+  expect((await page.request.get('/api/dashboard')).status()).toBe(401);
 });

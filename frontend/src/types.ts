@@ -18,6 +18,24 @@ export interface Project {
   description: string;
   status: string;
 }
+export interface DashboardOverview {
+  generated_at: string;
+  summary: {
+    employee_count: number;
+    available_employee_count: number;
+    project_count: number;
+    active_project_count: number;
+    skill_count: number;
+  };
+  capacity: {
+    employee_id: string;
+    name: string;
+    title: string;
+    total_allocation: number;
+    remaining_allocation: number;
+  }[];
+  default_project: Project | null;
+}
 export interface Page<T> {
   items: T[];
   total: number;

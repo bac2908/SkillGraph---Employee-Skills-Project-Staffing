@@ -17,10 +17,12 @@ test('dashboard displays API metrics, switches project and opens staffing dialog
   await expect(page.locator('.coverage-number')).toHaveText('80%');
   await expect(page.locator('.candidate-card')).toHaveCount(2);
   await page.screenshot({ path: info.outputPath('dashboard-desktop.png'), fullPage: true });
-  await page.getByLabel('Chọn dự án phân tích').selectOption('PROJ002');
+  await page.getByRole('button', { name: 'Chọn dự án phân tích' }).click();
+  await page.getByRole('button', { name: 'Chọn Cloud Gaming Platform' }).click();
   await expect(page.locator('.coverage-number')).toHaveText('100%');
   await expect(page.getByRole('heading', { name: 'Đội ngũ đã đáp ứng kỹ năng' })).toBeVisible();
-  await page.getByLabel('Chọn dự án phân tích').selectOption('PROJ001');
+  await page.getByRole('button', { name: 'Chọn dự án phân tích' }).click();
+  await page.getByRole('button', { name: 'Chọn E-commerce Platform' }).click();
   await page.getByRole('button', { name: 'Xem & phân công' }).first().click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.locator('.capacity-note strong')).toHaveText('20%');
@@ -204,6 +206,10 @@ test('dashboard and form pass automated accessibility checks', async ({ page }) 
     expect(result.violations.map((v) => v.id)).toEqual([]);
   };
   await check();
+  await page.getByRole('button', { name: 'Chọn dự án phân tích' }).click();
+  await expect(page.getByRole('button', { name: 'Chọn E-commerce Platform' })).toBeVisible();
+  await check();
+  await page.keyboard.press('Escape');
   await page.goto('/employees');
   await page.getByRole('button', { name: 'Thêm nhân viên' }).click();
   await check();
