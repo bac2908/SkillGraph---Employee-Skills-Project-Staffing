@@ -4,6 +4,8 @@ from time import time_ns
 
 import pytest
 
+from app.db.graph import graph_db
+
 
 @pytest.mark.integration
 def test_crud_lifecycle_and_api_guards(authenticated_client) -> None:
@@ -16,6 +18,7 @@ def test_crud_lifecycle_and_api_guards(authenticated_client) -> None:
     created_paths: list[str] = []
     relationship_paths: list[str] = []
     with nullcontext(authenticated_client) as client:
+        actor_id = client.get("/api/auth/me").json()["user"]["user_id"]
         try:
             assert client.get("/health").json() == {"status": "ok"}
 
@@ -278,3 +281,13 @@ def test_crud_lifecycle_and_api_guards(authenticated_client) -> None:
             for path in reversed(created_paths):
                 response = client.delete(path)
                 assert response.status_code in {204, 404}, response.text
+            # The API intentionally keeps history after deletion. Only this test's
+            # temporary projects AND isolated account are eligible for cleanup.
+            with graph_db.driver.session() as session:
+                session.run(
+                    "MATCH (event:AuditEvent) "
+                    "WHERE event.project_id IN $project_ids AND event.actor_id = $actor_id "
+                    "DELETE event",
+                    project_ids=[project_id, second_project_id],
+                    actor_id=actor_id,
+                ).consume()

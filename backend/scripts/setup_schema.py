@@ -1,4 +1,5 @@
 from app.db.graph import graph_db
+from scripts.setup_activity_schema import setup_activity_schema
 
 CONSTRAINTS = {
     "employee_employee_id_unique": """
@@ -68,6 +69,7 @@ def main():
         with graph_db.driver.session() as session:
             _create_constraints(session)
             constraint_names = _verify_constraints(session)
+            setup_activity_schema(session)
 
         print("Schema constraints ready:")
         for constraint_name in constraint_names:

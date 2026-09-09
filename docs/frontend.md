@@ -36,6 +36,8 @@ Windows chứa dấu `&`. Không cần đổi tên thư mục dự án.
   mở hồ sơ để gán, cập nhật và gỡ kỹ năng.
 - Kỹ năng: tìm kiếm, lọc theo nhóm, tạo/sửa/xóa danh mục.
 - Dự án: tạo/sửa/xóa; trang chi tiết gồm phân tích, đội ngũ và yêu cầu kỹ năng.
+- Hoạt động (Admin): trang lịch sử chung và tab trong chi tiết dự án, lọc/phân
+  trang và xem giá trị trước/sau. Xem [nhật ký dự án](project-activity.md).
 - Phân công: xem dung lượng còn lại, đặt vai trò và allocation, chỉnh sửa hoặc gỡ
   phân công. Lỗi vượt giới hạn từ server được hiển thị trong biểu mẫu, giữ lại dữ
   liệu đã nhập để sửa và thử lại.

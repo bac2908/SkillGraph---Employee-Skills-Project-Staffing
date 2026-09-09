@@ -1,15 +1,16 @@
 # SkillGraph: phân tích lộ trình sau bản local
 
-Phạm vi đợt hiện tại là API tổng hợp dashboard và giao diện sử dụng nó, không phải
-triển khai toàn bộ các hạng mục vận hành. Xem [phần đã triển khai](dashboard.md).
-Những mục dưới đây là đề xuất, chưa phải tính năng đã có.
+Đã hoàn thành [dashboard tổng hợp](dashboard.md) và bổ sung
+[nhật ký hoạt động dự án](project-activity.md) trong đợt tiếp theo (10/09/2026).
+Chưa triển khai toàn bộ các hạng mục vận hành. Trạng thái cụ thể ghi dưới đây;
+không coi các đề xuất còn lại là tính năng đã có.
 
 ## Thứ tự ưu tiên đề xuất
 
 | Thứ tự | Hạng mục | Lý do | Điều kiện nghiệm thu |
 | --- | --- | --- | --- |
-| 1 — đã làm đợt này | Dashboard tổng hợp | Loại tải cả danh mục và request theo từng dự án khi mở tổng quan | Tổng chính xác, response có giới hạn, lỗi rõ ràng, test BE/FE |
-| 2 | Nhật ký thay đổi | Trả lời ai sửa phân công/quyền, sửa gì và khi nào | Sự kiện đáng tin cậy, phân quyền, lọc và phân trang; không lộ secret |
+| 1 — đã làm | Dashboard tổng hợp | Loại tải cả danh mục và request theo từng dự án khi mở tổng quan | Tổng chính xác, response có giới hạn, lỗi rõ ràng, test BE/FE |
+| 2 — đã làm phần dự án | Nhật ký thay đổi | Trả lời ai sửa dự án/phân công/yêu cầu kỹ năng; audit tài khoản/quyền còn thiếu | Cùng graph transaction, Admin-only, trước/sau, lọc, cursor; xem giới hạn engine trong tài liệu |
 | 3 | Readiness, backup và phục hồi | Xác nhận ứng dụng thực sự dùng được và dữ liệu có thể khôi phục | Kiểm tra DB với timeout; thử restore bằng môi trường riêng |
 | 4 | Một môi trường staging HTTPS | Kiểm tra toàn bộ luồng ngoài máy cá nhân | Cookie/origin đúng; secrets tách biệt; chưa chứa dữ liệu nhạy cảm thật |
 | 5 | Giám sát và kiểm thử tải | Có số đo trước khi quyết định mở rộng | Ghi nhận độ trễ p95, tỷ lệ lỗi và tài nguyên dưới tải có kiểm soát |
@@ -19,9 +20,9 @@ Nếu mục tiêu trước mắt là phỏng vấn, ưu tiên audit và một k�
 giải thích rõ trade-off. Nếu mục tiêu là dùng thật nhiều người, backup/restore và
 staging an toàn phải hoàn tất trước khi mở cho người dùng thực tế.
 
-## Ý tưởng nổi bật: lịch sử thay đổi ngay tại dự án
+## Lịch sử thay đổi ngay tại dự án: đã triển khai phần graph
 
-Thêm tab Hoạt động trong chi tiết dự án, chẳng hạn:
+Đã thêm tab Hoạt động cho Admin trong chi tiết dự án và trang `/activity`. Ví dụ minh họa:
 
 > 09:30 — Manager A đổi allocation của EMP001 từ 40% thành 60%, vai trò Backend Developer.
 
@@ -30,18 +31,19 @@ gian UTC hiển thị theo múi giờ người xem, tài nguyên và các trư�
 được cho phép. Có bộ lọc thời gian, hành động và người thực hiện; mở chi tiết khi
 cần thay vì hiển thị nguyên JSON dài.
 
-Giai đoạn đầu đề xuất trang audit chỉ dành Admin. Quyền Manager xem lịch sử dự án
+Giai đoạn đầu trang audit chỉ dành Admin. Quyền Manager xem lịch sử dự án
 cần chốt rõ; không tự suy ra từ quyền đọc dữ liệu hiện tại. Không thêm nút hoàn
 tác ngay: hoàn tác là một thao tác ghi mới, cần kiểm tra trạng thái và allocation
 hiện tại chứ không chép mù giá trị cũ.
 
-### Bẫy kỹ thuật phải giải quyết trước khi viết audit
+### Thiết kế và các phần audit còn lại
 
 Dữ liệu nghiệp vụ nằm ở graph, auth nằm ở SQLite. Nếu sửa graph xong mới ghi audit
 vào SQLite thì có thể mất audit khi SQLite lỗi. Middleware ghi sau response cũng
 không tự giải quyết tính nguyên tử.
 
-Đề xuất cho quy mô hiện tại:
+Thiết kế cho quy mô hiện tại (mục 1/3 và context retry đã triển khai cho dự án;
+mục 2 audit SQLite còn thiếu):
 
 1. Với thao tác graph, ghi AuditEvent và thay đổi nghiệp vụ trong cùng graph
    transaction. Audit thất bại thì thay đổi không được xác nhận thành công.
@@ -93,6 +95,6 @@ lại khi ghi. Hệ thống hiện tại là rule-based, chưa phải mô hình 
 - Đặt giới hạn dung lượng/thời hạn cho log và backup; cần thống nhất chính sách
   trước khi tự động xóa. Không coi auth.sqlite3 là cache.
 - Chỉ thêm Redis, hàng đợi hoặc dịch vụ khác khi có yêu cầu/số đo chứng minh cần;
-  đợt dashboard không thêm dependency hay image Docker.
+  các đợt dashboard và nhật ký dự án không thêm dependency hay image Docker.
 - Không benchmark tải ghi trên dữ liệu thật. Dùng dataset tổng hợp ở môi trường
   riêng và mô tả rõ số nhân viên/dự án/quan hệ cùng mức đồng thời đã kiểm thử.

@@ -12,7 +12,7 @@ os.environ["COGNODB_PASSWORD"] = "not-a-real-credential"
 def main():
     import uvicorn
 
-    from app.api import dashboard, employees, projects, skills
+    from app.api import activity, dashboard, employees, projects, skills
     from app.api.auth_dependencies import get_auth_store
     from app.core.config import settings
     from app.main import app
@@ -28,6 +28,7 @@ def main():
     employees.service.list = empty_list
     projects.project_service.list = empty_list
     skills.service.list = empty_list
+    activity.service.list = lambda *args: {"items": [], "next_cursor": None}
     from datetime import UTC, datetime
 
     dashboard.service.overview = lambda: {

@@ -2,7 +2,9 @@ from dataclasses import dataclass
 
 from neo4j import Transaction
 
+from app.core.audit import AuditActor, AuditContext
 from app.db.graph import graph_db
+from app.repositories.activity_repository import write_event
 from app.repositories.errors import RepositoryError
 
 LIST_PROJECT_ASSIGNMENTS_QUERY = """
@@ -45,7 +47,7 @@ PROJECT_ASSIGNMENT_EXISTS_QUERY = """
 MATCH (:Employee {employee_id: $employee_id})
       -[assignment:WORKS_ON]->
       (:Project {project_id: $project_id})
-RETURN count(assignment) > 0 AS relationship_exists
+RETURN properties(assignment) AS before
 """
 
 UPSERT_PROJECT_ASSIGNMENT_QUERY = """
@@ -106,6 +108,7 @@ def _upsert_project_assignment(
     employee_id: str,
     role: str,
     allocation: int,
+    audit: AuditContext,
 ) -> AssignmentUpsertResult:
     allocation_record = transaction.run(
         LOCK_AND_GET_ALLOCATION_QUERY,
@@ -128,8 +131,14 @@ def _upsert_project_assignment(
         project_id=project_id,
         employee_id=employee_id,
     ).single()
-    relationship_exists = bool(
-        exists_record and exists_record["relationship_exists"]
+    before = (
+        {
+            **exists_record["before"],
+            "project_id": project_id,
+            "employee_id": employee_id,
+        }
+        if exists_record
+        else None
     )
 
     record = transaction.run(
@@ -140,17 +149,24 @@ def _upsert_project_assignment(
         allocation=allocation,
     ).single()
     if record is None:
-        raise ProjectAssignmentRepositoryError(
-            "Project assignment was not saved."
-        )
+        raise ProjectAssignmentRepositoryError("Project assignment was not saved.")
 
     assignment = record.data()
+    write_event(
+        transaction,
+        audit,
+        project_id,
+        "WORKS_ON",
+        f"{project_id}/{employee_id}",
+        before,
+        assignment,
+    )
     total_allocation = allocated_elsewhere + allocation
     assignment["employee_total_allocation"] = total_allocation
     assignment["employee_remaining_allocation"] = 100 - total_allocation
     return AssignmentUpsertResult(
         assignment=assignment,
-        created=not relationship_exists,
+        created=before is None,
         allocated_elsewhere=allocated_elsewhere,
     )
 
@@ -160,7 +176,10 @@ def upsert_project_assignment(
     employee_id: str,
     role: str,
     allocation: int,
+    *,
+    actor: AuditActor,
 ) -> AssignmentUpsertResult:
+    audit = AuditContext.create(actor)
     try:
         with graph_db.driver.session() as session:
             return session.execute_write(
@@ -169,6 +188,7 @@ def upsert_project_assignment(
                 employee_id,
                 role,
                 allocation,
+                audit,
             )
     except RepositoryError:
         raise
@@ -178,15 +198,49 @@ def upsert_project_assignment(
         ) from exc
 
 
-def delete_project_assignment(project_id: str, employee_id: str) -> bool:
+def _delete_project_assignment(
+    transaction: Transaction, project_id: str, employee_id: str, audit: AuditContext
+) -> bool:
+    # Same employee lock as upsert: capture the exact state that is being deleted.
+    transaction.run(
+        LOCK_AND_GET_ALLOCATION_QUERY, project_id=project_id, employee_id=employee_id
+    ).consume()
+    existing = transaction.run(
+        PROJECT_ASSIGNMENT_EXISTS_QUERY, project_id=project_id, employee_id=employee_id
+    ).single()
+    if existing is None:
+        return False
+    record = transaction.run(
+        DELETE_PROJECT_ASSIGNMENT_QUERY, project_id=project_id, employee_id=employee_id
+    ).single()
+    if not record or not record["deleted"]:
+        raise ProjectAssignmentRepositoryError("Project assignment was not deleted.")
+    before = {
+        **existing["before"],
+        "project_id": project_id,
+        "employee_id": employee_id,
+    }
+    write_event(
+        transaction,
+        audit,
+        project_id,
+        "WORKS_ON",
+        f"{project_id}/{employee_id}",
+        before,
+        None,
+    )
+    return True
+
+
+def delete_project_assignment(
+    project_id: str, employee_id: str, *, actor: AuditActor
+) -> bool:
+    audit = AuditContext.create(actor)
     try:
         with graph_db.driver.session() as session:
-            record = session.run(
-                DELETE_PROJECT_ASSIGNMENT_QUERY,
-                project_id=project_id,
-                employee_id=employee_id,
-            ).single()
-            return bool(record and record["deleted"])
+            return session.execute_write(
+                _delete_project_assignment, project_id, employee_id, audit
+            )
     except Exception as exc:
         raise ProjectAssignmentRepositoryError(
             "Unable to delete project assignment."

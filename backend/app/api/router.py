@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 
+from app.api.activity import router as activity_router
 from app.api.auth_dependencies import authorize_business
 from app.api.dashboard import router as dashboard_router
 from app.api.employee_skills import router as employee_skills_router
@@ -11,6 +12,7 @@ from app.api.skills import router as skills_router
 
 api_router = APIRouter(prefix="/api", dependencies=[Depends(authorize_business)])
 api_router.include_router(dashboard_router)
+api_router.include_router(activity_router)
 api_router.include_router(employees_router)
 api_router.include_router(employee_skills_router)
 api_router.include_router(skills_router)

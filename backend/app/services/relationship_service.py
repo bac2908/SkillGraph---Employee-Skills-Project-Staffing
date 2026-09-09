@@ -1,3 +1,4 @@
+from app.core.audit import AuditActor
 from app.core.exceptions import (
     AllocationExceededError,
     ResourceNotFoundError,
@@ -69,9 +70,7 @@ class ProjectAssignmentService:
     @staticmethod
     def list(project_id: str) -> dict:
         _require_project(project_id)
-        items = project_assignment_repository.list_project_assignments(
-            project_id
-        )
+        items = project_assignment_repository.list_project_assignments(project_id)
         return {"items": items, "total": len(items)}
 
     @staticmethod
@@ -80,6 +79,8 @@ class ProjectAssignmentService:
         employee_id: str,
         role: str,
         allocation: int,
+        *,
+        actor: AuditActor,
     ) -> tuple[dict, bool]:
         _require_project(project_id)
         _require_employee(employee_id)
@@ -88,6 +89,7 @@ class ProjectAssignmentService:
             employee_id,
             role,
             allocation,
+            actor=actor,
         )
         if result.allocation_exceeded:
             raise AllocationExceededError(
@@ -101,12 +103,13 @@ class ProjectAssignmentService:
         return result.assignment, result.created
 
     @staticmethod
-    def delete(project_id: str, employee_id: str) -> None:
+    def delete(project_id: str, employee_id: str, *, actor: AuditActor) -> None:
         _require_project(project_id)
         _require_employee(employee_id)
         deleted = project_assignment_repository.delete_project_assignment(
             project_id,
             employee_id,
+            actor=actor,
         )
         if not deleted:
             raise ResourceNotFoundError(
@@ -119,9 +122,7 @@ class ProjectRequirementService:
     @staticmethod
     def list(project_id: str) -> dict:
         _require_project(project_id)
-        items = project_requirement_repository.list_project_requirements(
-            project_id
-        )
+        items = project_requirement_repository.list_project_requirements(project_id)
         return {"items": items, "total": len(items)}
 
     @staticmethod
@@ -130,6 +131,8 @@ class ProjectRequirementService:
         skill_id: str,
         min_level: int,
         priority: str,
+        *,
+        actor: AuditActor,
     ) -> tuple[dict, bool]:
         _require_project(project_id)
         _require_skill(skill_id)
@@ -138,15 +141,17 @@ class ProjectRequirementService:
             skill_id,
             min_level,
             priority,
+            actor=actor,
         )
 
     @staticmethod
-    def delete(project_id: str, skill_id: str) -> None:
+    def delete(project_id: str, skill_id: str, *, actor: AuditActor) -> None:
         _require_project(project_id)
         _require_skill(skill_id)
         deleted = project_requirement_repository.delete_project_requirement(
             project_id,
             skill_id,
+            actor=actor,
         )
         if not deleted:
             raise ResourceNotFoundError(

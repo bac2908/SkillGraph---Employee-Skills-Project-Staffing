@@ -1,6 +1,8 @@
 from neo4j import Transaction
 
+from app.core.audit import AuditActor, AuditContext
 from app.db.graph import graph_db
+from app.repositories.activity_repository import write_event
 from app.repositories.errors import RepositoryError
 
 LIST_PROJECT_REQUIREMENTS_QUERY = """
@@ -17,11 +19,13 @@ RETURN project.project_id AS project_id,
 ORDER BY toLower(skill.name), skill.skill_id
 """
 
-PROJECT_REQUIREMENT_EXISTS_QUERY = """
-MATCH (:Project {project_id: $project_id})
-      -[requirement:REQUIRES_SKILL]->
-      (:Skill {skill_id: $skill_id})
-RETURN count(requirement) > 0 AS relationship_exists
+LOCK_PROJECT_REQUIREMENT_QUERY = """
+MATCH (project:Project {project_id: $project_id})
+SET project.project_id = project.project_id
+WITH project
+MATCH (skill:Skill {skill_id: $skill_id})
+OPTIONAL MATCH (project)-[requirement:REQUIRES_SKILL]->(skill)
+RETURN properties(requirement) AS before
 """
 
 UPSERT_PROJECT_REQUIREMENT_QUERY = """
@@ -72,14 +76,19 @@ def _upsert_project_requirement(
     skill_id: str,
     min_level: int,
     priority: str,
+    audit: AuditContext,
 ) -> tuple[dict, bool]:
     exists_record = transaction.run(
-        PROJECT_REQUIREMENT_EXISTS_QUERY,
+        LOCK_PROJECT_REQUIREMENT_QUERY,
         project_id=project_id,
         skill_id=skill_id,
     ).single()
-    relationship_exists = bool(
-        exists_record and exists_record["relationship_exists"]
+    if exists_record is None:
+        raise ProjectRequirementRepositoryError("Project or skill does not exist.")
+    before = (
+        {**exists_record["before"], "project_id": project_id, "skill_id": skill_id}
+        if exists_record["before"] is not None
+        else None
     )
 
     record = transaction.run(
@@ -90,10 +99,18 @@ def _upsert_project_requirement(
         priority=priority,
     ).single()
     if record is None:
-        raise ProjectRequirementRepositoryError(
-            "Project requirement was not saved."
-        )
-    return record.data(), not relationship_exists
+        raise ProjectRequirementRepositoryError("Project requirement was not saved.")
+    requirement = record.data()
+    write_event(
+        transaction,
+        audit,
+        project_id,
+        "REQUIRES_SKILL",
+        f"{project_id}/{skill_id}",
+        before,
+        requirement,
+    )
+    return requirement, before is None
 
 
 def upsert_project_requirement(
@@ -101,7 +118,10 @@ def upsert_project_requirement(
     skill_id: str,
     min_level: int,
     priority: str,
+    *,
+    actor: AuditActor,
 ) -> tuple[dict, bool]:
+    audit = AuditContext.create(actor)
     try:
         with graph_db.driver.session() as session:
             return session.execute_write(
@@ -110,6 +130,7 @@ def upsert_project_requirement(
                 skill_id,
                 min_level,
                 priority,
+                audit,
             )
     except RepositoryError:
         raise
@@ -119,15 +140,41 @@ def upsert_project_requirement(
         ) from exc
 
 
-def delete_project_requirement(project_id: str, skill_id: str) -> bool:
+def _delete_project_requirement(
+    transaction: Transaction, project_id: str, skill_id: str, audit: AuditContext
+) -> bool:
+    existing = transaction.run(
+        LOCK_PROJECT_REQUIREMENT_QUERY, project_id=project_id, skill_id=skill_id
+    ).single()
+    if not existing or existing["before"] is None:
+        return False
+    record = transaction.run(
+        DELETE_PROJECT_REQUIREMENT_QUERY, project_id=project_id, skill_id=skill_id
+    ).single()
+    if not record or not record["deleted"]:
+        raise ProjectRequirementRepositoryError("Project requirement was not deleted.")
+    before = {**existing["before"], "project_id": project_id, "skill_id": skill_id}
+    write_event(
+        transaction,
+        audit,
+        project_id,
+        "REQUIRES_SKILL",
+        f"{project_id}/{skill_id}",
+        before,
+        None,
+    )
+    return True
+
+
+def delete_project_requirement(
+    project_id: str, skill_id: str, *, actor: AuditActor
+) -> bool:
+    audit = AuditContext.create(actor)
     try:
         with graph_db.driver.session() as session:
-            record = session.run(
-                DELETE_PROJECT_REQUIREMENT_QUERY,
-                project_id=project_id,
-                skill_id=skill_id,
-            ).single()
-            return bool(record and record["deleted"])
+            return session.execute_write(
+                _delete_project_requirement, project_id, skill_id, audit
+            )
     except Exception as exc:
         raise ProjectRequirementRepositoryError(
             "Unable to delete project requirement."

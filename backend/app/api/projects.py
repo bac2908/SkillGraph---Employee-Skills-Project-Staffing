@@ -2,6 +2,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Path, Query, Response, status
 
+from app.api.auth_dependencies import CurrentUser
+from app.core.audit import AuditActor
 from app.schemas.candidate_recommendation import (
     CandidateRecommendationResponse,
 )
@@ -66,8 +68,10 @@ def list_projects(
         503: {"model": ErrorResponse},
     },
 )
-def create_project(payload: ProjectCreate) -> dict:
-    return project_service.create(payload.model_dump(mode="json"))
+def create_project(payload: ProjectCreate, user: CurrentUser) -> dict:
+    return project_service.create(
+        payload.model_dump(mode="json"), actor=AuditActor.from_user(user)
+    )
 
 
 @router.get(
@@ -92,10 +96,13 @@ def get_project(project_id: ProjectPath) -> dict:
         503: {"model": ErrorResponse},
     },
 )
-def update_project(project_id: ProjectPath, payload: ProjectUpdate) -> dict:
+def update_project(
+    project_id: ProjectPath, payload: ProjectUpdate, user: CurrentUser
+) -> dict:
     return project_service.update(
         project_id,
         payload.model_dump(exclude_unset=True, mode="json"),
+        actor=AuditActor.from_user(user),
     )
 
 
@@ -109,8 +116,8 @@ def update_project(project_id: ProjectPath, payload: ProjectUpdate) -> dict:
         503: {"model": ErrorResponse},
     },
 )
-def delete_project(project_id: ProjectPath) -> Response:
-    project_service.delete(project_id)
+def delete_project(project_id: ProjectPath, user: CurrentUser) -> Response:
+    project_service.delete(project_id, actor=AuditActor.from_user(user))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

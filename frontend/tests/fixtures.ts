@@ -1,5 +1,6 @@
 import type { Page as BrowserPage } from '@playwright/test';
 import type { Role, User } from '../src/auth';
+import type { ActivityEvent } from '../src/types';
 
 // Browser-only fixtures. The application itself always uses the real API.
 export async function mockApi(
@@ -68,6 +69,41 @@ export async function mockApi(
     }),
   );
   const database: Record<string, any[]> = { employees, skills, projects };
+  const activities: ActivityEvent[] = [];
+  let activitySequence = 0;
+  function track(
+    kind: ActivityEvent['resource_type'],
+    projectId: string,
+    resourceId: string,
+    before: any,
+    after: any,
+  ) {
+    const allowed =
+      kind === 'PROJECT'
+        ? ['project_id', 'name', 'description', 'status']
+        : kind === 'WORKS_ON'
+          ? ['project_id', 'employee_id', 'role', 'allocation']
+          : ['project_id', 'skill_id', 'min_level', 'priority'];
+    const snapshot = (value: any) =>
+      value == null
+        ? null
+        : Object.fromEntries(allowed.filter((key) => key in value).map((key) => [key, value[key]]));
+    const previous = snapshot(before);
+    const next = snapshot(after);
+    if (JSON.stringify(previous) === JSON.stringify(next)) return;
+    activities.unshift({
+      event_id: `00000000-0000-0000-0000-${String(++activitySequence).padStart(12, '0')}`,
+      occurred_at: new Date().toISOString(),
+      actor_id: current.user_id,
+      actor_name: current.name,
+      project_id: projectId,
+      resource_type: kind,
+      resource_id: resourceId,
+      action: previous === null ? 'CREATED' : next === null ? 'DELETED' : 'UPDATED',
+      before: previous,
+      after: next,
+    });
+  }
   const relations: Record<string, any[]> = {
     '/api/projects/PROJ001/assignments': [
       assignment('PROJ001', 'EMP002', 80),
@@ -197,6 +233,31 @@ export async function mockApi(
       return json({ detail: 'Not found' }, 404);
     }
     if (!authenticated) return json({ detail: 'Phiên đăng nhập đã hết hạn.' }, 401);
+    if (resource === 'activity') {
+      if (current.role !== 'ADMIN') return json({ detail: 'Admin only.' }, 403);
+      if (method !== 'GET') return json({ detail: 'Method not allowed' }, 405);
+      let filtered = activities.filter((item) => {
+        for (const key of ['project_id', 'action', 'resource_type'] as const)
+          if (url.searchParams.get(key) && item[key] !== url.searchParams.get(key)) return false;
+        const actor = url.searchParams.get('actor')?.toLowerCase();
+        if (actor && !item.actor_name.toLowerCase().includes(actor) && item.actor_id !== actor)
+          return false;
+        const since = url.searchParams.get('since');
+        const until = url.searchParams.get('until');
+        return (
+          (!since || new Date(item.occurred_at) >= new Date(since)) &&
+          (!until || new Date(item.occurred_at) <= new Date(until))
+        );
+      });
+      const cursor = url.searchParams.get('cursor');
+      if (cursor)
+        filtered = filtered.slice(filtered.findIndex((item) => item.event_id === cursor) + 1);
+      const limit = Number(url.searchParams.get('limit') || 20);
+      return json({
+        items: filtered.slice(0, limit),
+        next_cursor: filtered.length > limit ? filtered[limit - 1].event_id : null,
+      });
+    }
     if (method !== 'GET') {
       if (req.headers()['x-csrf-token'] !== csrf)
         return json({ detail: 'Invalid CSRF token.' }, 403);
@@ -280,6 +341,14 @@ export async function mockApi(
       const found = items.findIndex((item) => item[relatedField] === relatedId);
       if (method === 'DELETE') {
         if (found < 0) return json({ detail: 'Không tìm thấy liên kết.' }, 404);
+        if (resource === 'projects')
+          track(
+            relation === 'assignments' ? 'WORKS_ON' : 'REQUIRES_SKILL',
+            id,
+            `${id}/${relatedId}`,
+            items[found],
+            null,
+          );
         items.splice(found, 1);
         return json(null, 204);
       }
@@ -312,6 +381,14 @@ export async function mockApi(
                 category: skill?.category,
                 ...body,
               };
+        if (resource === 'projects')
+          track(
+            relation === 'assignments' ? 'WORKS_ON' : 'REQUIRES_SKILL',
+            id,
+            `${id}/${relatedId}`,
+            found < 0 ? null : items[found],
+            value,
+          );
         if (found < 0) items.push(value);
         else items[found] = value;
         return json(
@@ -354,21 +431,26 @@ export async function mockApi(
       if (items.some((item) => item[idField] === body[idField]))
         return json({ detail: 'Mã đã tồn tại.' }, 409);
       items.push(body);
+      if (resource === 'projects') track('PROJECT', body.project_id, body.project_id, null, body);
       return json(body, 201);
     }
     if (found < 0) return json({ detail: 'Không tìm thấy bản ghi.' }, 404);
     if (method === 'GET') return json(items[found]);
     if (method === 'PATCH') {
+      if (resource === 'projects')
+        track('PROJECT', id, id, items[found], { ...items[found], ...body });
       items[found] = { ...items[found], ...body };
       return json(items[found]);
     }
     if (method === 'DELETE') {
+      if (resource === 'projects') track('PROJECT', id, id, items[found], null);
       items.splice(found, 1);
       return json(null, 204);
     }
     return json({ detail: 'Unknown method' }, 405);
   });
   return {
+    activities,
     expire: () => {
       authenticated = false;
     },

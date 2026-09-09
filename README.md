@@ -21,7 +21,13 @@ for configuration, architecture, and browser tests.
 The overview now uses a bounded, authenticated `GET /api/dashboard` aggregate
 instead of loading all catalogues and assignments on initial page load. Project
 selection is searchable and paginated. See [dashboard design and tests](docs/dashboard.md)
-and the [proposed next steps and audit design](docs/next-steps.md).
+and the [next-step roadmap](docs/next-steps.md).
+
+Admins can now view **Hoạt động** in the sidebar or a project's activity tab:
+actor, timestamp and before/after changes for projects, assignments and skill
+requirements. Existing installations should run `python -m scripts.setup_activity_schema`
+from `backend`. See [project activity and migration](docs/project-activity.md).
+Every new feature/change must have documentation: [documentation index](docs/README.md).
 
 ## Login and access control
 
@@ -69,6 +75,7 @@ Origin and X-CSRF-Token from `/api/auth/me`. The frontend handles these automati
 
 - `GET /health`
 - `GET /api/dashboard` (authenticated workspace overview)
+- `GET /api/activity` (Admin-only project history, cursor pagination)
 - `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`
 - `POST /api/auth/password`
 - `GET|POST /api/auth/users` (Admin)

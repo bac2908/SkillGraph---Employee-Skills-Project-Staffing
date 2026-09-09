@@ -1,7 +1,9 @@
 from neo4j import Transaction
 from neo4j.exceptions import ConstraintError
 
+from app.core.audit import AuditActor, AuditContext
 from app.db.graph import graph_db
+from app.repositories.activity_repository import write_event
 from app.repositories.errors import DuplicateRecordError, RepositoryError
 
 PROJECT_EXISTS_QUERY = """
@@ -82,8 +84,16 @@ RETURN {PROJECT_FIELDS}
 
 PROJECT_RELATIONSHIP_COUNT_QUERY = """
 MATCH (project:Project {project_id: $project_id})
+SET project.project_id = project.project_id
+WITH project
 OPTIONAL MATCH (project)-[relationship]-()
-RETURN count(relationship) AS relationship_count
+RETURN count(relationship) AS relationship_count, properties(project) AS before
+"""
+
+LOCK_PROJECT_QUERY = """
+MATCH (project:Project {project_id: $project_id})
+SET project.project_id = project.project_id
+RETURN properties(project) AS before
 """
 
 DELETE_PROJECT_QUERY = """
@@ -156,8 +166,7 @@ def _list_projects(
         **parameters,
     ).single()
     items = [
-        record.data()
-        for record in transaction.run(LIST_PROJECTS_QUERY, **parameters)
+        record.data() for record in transaction.run(LIST_PROJECTS_QUERY, **parameters)
     ]
     return items, total_record["total"] if total_record else 0
 
@@ -193,16 +202,30 @@ def get_project(project_id: str) -> dict | None:
         raise ProjectRepositoryError("Unable to retrieve project.") from exc
 
 
-def create_project(properties: dict) -> dict:
+def _create_project(
+    transaction: Transaction, properties: dict, audit: AuditContext
+) -> dict:
+    record = transaction.run(CREATE_PROJECT_QUERY, properties=properties).single()
+    if record is None:
+        raise ProjectRepositoryError("Project was not created.")
+    project = record.data()
+    write_event(
+        transaction,
+        audit,
+        project["project_id"],
+        "PROJECT",
+        project["project_id"],
+        None,
+        project,
+    )
+    return project
+
+
+def create_project(properties: dict, *, actor: AuditActor) -> dict:
+    audit = AuditContext.create(actor)
     try:
         with graph_db.driver.session() as session:
-            record = session.run(
-                CREATE_PROJECT_QUERY,
-                properties=properties,
-            ).single()
-            if record is None:
-                raise ProjectRepositoryError("Project was not created.")
-            return record.data()
+            return session.execute_write(_create_project, properties, audit)
     except ConstraintError as exc:
         raise DuplicateRecordError("Project already exists.") from exc
     except RepositoryError:
@@ -211,15 +234,29 @@ def create_project(properties: dict) -> dict:
         raise ProjectRepositoryError("Unable to create project.") from exc
 
 
-def update_project(project_id: str, updates: dict) -> dict | None:
+def _update_project(
+    transaction: Transaction, project_id: str, updates: dict, audit: AuditContext
+) -> dict | None:
+    locked = transaction.run(LOCK_PROJECT_QUERY, project_id=project_id).single()
+    if locked is None:
+        return None
+    record = transaction.run(
+        UPDATE_PROJECT_QUERY, project_id=project_id, updates=updates
+    ).single()
+    if record is None:
+        raise ProjectRepositoryError("Project update was not saved.")
+    project = record.data()
+    write_event(
+        transaction, audit, project_id, "PROJECT", project_id, locked["before"], project
+    )
+    return project
+
+
+def update_project(project_id: str, updates: dict, *, actor: AuditActor) -> dict | None:
+    audit = AuditContext.create(actor)
     try:
         with graph_db.driver.session() as session:
-            record = session.run(
-                UPDATE_PROJECT_QUERY,
-                project_id=project_id,
-                updates=updates,
-            ).single()
-            return record.data() if record else None
+            return session.execute_write(_update_project, project_id, updates, audit)
     except ConstraintError as exc:
         raise DuplicateRecordError("Project update is not unique.") from exc
     except Exception as exc:
@@ -229,6 +266,7 @@ def update_project(project_id: str, updates: dict) -> dict | None:
 def _delete_project(
     transaction: Transaction,
     project_id: str,
+    audit: AuditContext,
 ) -> int | None:
     record = transaction.run(
         PROJECT_RELATIONSHIP_COUNT_QUERY,
@@ -243,12 +281,22 @@ def _delete_project(
             DELETE_PROJECT_QUERY,
             project_id=project_id,
         ).consume()
+        write_event(
+            transaction,
+            audit,
+            project_id,
+            "PROJECT",
+            project_id,
+            record["before"],
+            None,
+        )
     return relationship_count
 
 
-def delete_project(project_id: str) -> int | None:
+def delete_project(project_id: str, *, actor: AuditActor) -> int | None:
+    audit = AuditContext.create(actor)
     try:
         with graph_db.driver.session() as session:
-            return session.execute_write(_delete_project, project_id)
+            return session.execute_write(_delete_project, project_id, audit)
     except Exception as exc:
         raise ProjectRepositoryError("Unable to delete project.") from exc

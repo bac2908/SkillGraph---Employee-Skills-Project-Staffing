@@ -1,3 +1,4 @@
+from app.core.audit import AuditActor
 from app.core.exceptions import (
     ResourceAlreadyExistsError,
     ResourceInUseError,
@@ -37,7 +38,7 @@ class ProjectService:
         return project
 
     @staticmethod
-    def create(properties: dict) -> dict:
+    def create(properties: dict, *, actor: AuditActor) -> dict:
         project_id = properties["project_id"]
         if project_repository.project_exists(project_id):
             raise ResourceAlreadyExistsError(
@@ -47,7 +48,7 @@ class ProjectService:
             )
 
         try:
-            return project_repository.create_project(properties)
+            return project_repository.create_project(properties, actor=actor)
         except DuplicateRecordError as exc:
             raise ResourceAlreadyExistsError(
                 "Project",
@@ -56,15 +57,15 @@ class ProjectService:
             ) from exc
 
     @staticmethod
-    def update(project_id: str, updates: dict) -> dict:
-        project = project_repository.update_project(project_id, updates)
+    def update(project_id: str, updates: dict, *, actor: AuditActor) -> dict:
+        project = project_repository.update_project(project_id, updates, actor=actor)
         if project is None:
             raise ResourceNotFoundError("Project", project_id)
         return project
 
     @staticmethod
-    def delete(project_id: str) -> None:
-        relationship_count = project_repository.delete_project(project_id)
+    def delete(project_id: str, *, actor: AuditActor) -> None:
+        relationship_count = project_repository.delete_project(project_id, actor=actor)
         if relationship_count is None:
             raise ResourceNotFoundError("Project", project_id)
         if relationship_count > 0:

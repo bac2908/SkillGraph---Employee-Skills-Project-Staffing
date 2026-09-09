@@ -11,6 +11,7 @@ import {
   X,
   LogOut,
   ShieldCheck,
+  History,
 } from 'lucide-react';
 import { Link, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +22,7 @@ import { ErrorNotice, FeedbackProvider, PageHeading, initials } from './componen
 import { useAuth, roleLabel } from './auth';
 import { AccountPage, LoginPage, RequiredPasswordChange, SessionLoading } from './pages/Auth';
 import { UsersPage } from './pages/Users';
+import { ActivityPageView } from './components/Activity';
 
 const nav = [
   { to: '/', label: 'Tổng quan', icon: LayoutDashboard },
@@ -59,7 +61,11 @@ function AppShell() {
   const [logoutPending, setLogoutPending] = useState(false);
   const [logoutError, setLogoutError] = useState<unknown>(null);
   const navigation = auth.isAdmin
-    ? [...nav, { to: '/users', label: 'Tài khoản', icon: ShieldCheck }]
+    ? [
+        ...nav,
+        { to: '/users', label: 'Tài khoản', icon: ShieldCheck },
+        { to: '/activity', label: 'Hoạt động', icon: History },
+      ]
     : nav;
   const [menu, setMenu] = useState(false);
   const location = useLocation();
@@ -193,6 +199,7 @@ function AppShell() {
             <Routes>
               <Route path="/account" element={<AccountPage />} />
               <Route path="/users" element={<UsersPage />} />
+              <Route path="/activity" element={<ActivityPageView />} />
               <Route path="/" element={<Dashboard />} />
               <Route
                 path="/employees"

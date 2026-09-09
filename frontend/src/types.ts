@@ -18,6 +18,22 @@ export interface Project {
   description: string;
   status: string;
 }
+export interface ActivityEvent {
+  event_id: string;
+  occurred_at: string;
+  actor_id: string;
+  actor_name: string;
+  project_id: string;
+  action: 'CREATED' | 'UPDATED' | 'DELETED';
+  resource_type: 'PROJECT' | 'WORKS_ON' | 'REQUIRES_SKILL';
+  resource_id: string;
+  before: Record<string, string | number | null> | null;
+  after: Record<string, string | number | null> | null;
+}
+export interface ActivityPage {
+  items: ActivityEvent[];
+  next_cursor: string | null;
+}
 export interface DashboardOverview {
   generated_at: string;
   summary: {

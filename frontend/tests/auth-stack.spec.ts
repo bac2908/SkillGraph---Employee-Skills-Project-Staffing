@@ -11,6 +11,7 @@ test('real FastAPI cookie + CSRF + account lifecycle through Vite proxy', async 
   await page.getByLabel('Mật khẩu', { exact: true }).fill('Browser-only initial password!');
   await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Đúng người, đúng quyền' })).toBeVisible();
+  expect((await page.request.get('/api/activity')).status()).toBe(200);
   const cookie = (await context.cookies()).find((item) => item.name === 'skillgraph_session');
   expect(cookie?.httpOnly).toBe(true);
   expect(cookie?.sameSite).toBe('Lax');
@@ -57,6 +58,7 @@ test('real FastAPI cookie + CSRF + account lifecycle through Vite proxy', async 
   });
   expect(denied.status()).toBe(403);
   expect((await page.request.get('/api/auth/users')).status()).toBe(403);
+  expect((await page.request.get('/api/activity')).status()).toBe(403);
   await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
   expect((await page.request.get('/api/employees')).status()).toBe(401);
   expect((await page.request.get('/api/dashboard')).status()).toBe(401);

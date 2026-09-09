@@ -222,7 +222,7 @@ test('dashboard and form pass automated accessibility checks', async ({ page }) 
   await expect(page.getByRole('row').filter({ hasText: 'An Nguyen' })).toBeVisible();
   await check();
   await page.keyboard.press('End');
-  await expect(page.getByRole('tab', { name: 'Yêu cầu kỹ năng' })).toBeFocused();
+  await expect(page.getByRole('tab', { name: 'Hoạt động', exact: true })).toBeFocused();
   await page.keyboard.press('Home');
   await expect(page.getByRole('tab', { name: 'Phân tích & gợi ý' })).toBeFocused();
 });

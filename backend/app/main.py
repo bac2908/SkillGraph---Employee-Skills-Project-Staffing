@@ -33,6 +33,10 @@ app = FastAPI(
             "description": "Authenticated workspace counts and bounded capacity overview.",
         },
         {
+            "name": "project activity",
+            "description": "Admin-only history of project and staffing changes.",
+        },
+        {
             "name": "employees",
             "description": "Employee profile management.",
         },

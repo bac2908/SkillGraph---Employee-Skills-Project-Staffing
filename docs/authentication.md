@@ -45,10 +45,15 @@ doanh nghiệp/tenant tách biệt hoặc giới hạn hồ sơ nhân viên theo
 | Sửa thông tin dự án, phân công và yêu cầu kỹ năng | Mọi dự án | Chỉ dự án được giao | Không |
 | Tạo tài khoản, phân quyền, khóa, đặt lại mật khẩu | Có | Không | Không |
 | Đổi mật khẩu cá nhân, đăng xuất | Có | Có | Có |
+| Xem nhật ký hoạt động dự án | Có | Không | Không |
 
 Admin chọn các dự án được giao khi cấp quyền Manager. Manager không có dự án
 được giao vẫn đọc được dữ liệu nhưng không có quyền ghi. Tài khoản đăng nhập
 không tự đồng nhất với một Employee; đây là hai khái niệm riêng.
+
+Nhật ký dự án là ngoại lệ đối với dữ liệu chung: chỉ Admin đọc được, kể cả lịch
+sử thao tác của Manager. Xem [phạm vi và cách lưu audit](project-activity.md).
+Audit đăng nhập/đổi quyền/tài khoản chưa được triển khai trong đợt này.
 
 Backend xác thực mọi route nghiệp vụ, kiểm tra CSRF với phương thức ghi và mặc
 định từ chối quyền ghi nếu không nằm trong chính sách. Manager được cho phép

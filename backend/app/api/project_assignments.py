@@ -2,6 +2,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Path, Response, status
 
+from app.api.auth_dependencies import CurrentUser
+from app.core.audit import AuditActor
 from app.schemas.common import ErrorResponse
 from app.schemas.relationships import (
     ProjectAssignmentList,
@@ -61,12 +63,14 @@ def upsert_project_assignment(
     employee_id: EmployeePath,
     payload: ProjectAssignmentWrite,
     response: Response,
+    user: CurrentUser,
 ) -> dict:
     assignment, created = service.upsert(
         project_id,
         employee_id,
         payload.role,
         payload.allocation,
+        actor=AuditActor.from_user(user),
     )
     if created:
         response.status_code = status.HTTP_201_CREATED
@@ -85,6 +89,7 @@ def upsert_project_assignment(
 def delete_project_assignment(
     project_id: ProjectPath,
     employee_id: EmployeePath,
+    user: CurrentUser,
 ) -> Response:
-    service.delete(project_id, employee_id)
+    service.delete(project_id, employee_id, actor=AuditActor.from_user(user))
     return Response(status_code=status.HTTP_204_NO_CONTENT)

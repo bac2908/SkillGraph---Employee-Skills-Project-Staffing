@@ -15,6 +15,8 @@ import {
 import { Assignments, AssignmentDialog, SkillRelations } from '../components/Relations';
 import { CandidateSuggestions, SkillCoverage } from '../components/Analysis';
 import { useCapacity } from '../hooks';
+import { useAuth } from '../auth';
+import { ActivityFeed } from '../components/Activity';
 
 const projectTabs = [
   ['analysis', 'Phân tích & gợi ý'],
@@ -68,11 +70,13 @@ export function EmployeeDetail() {
 }
 
 export function ProjectDetail() {
+  const { isAdmin } = useAuth();
+  const visibleTabs = isAdmin ? [...projectTabs, ['activity', 'Hoạt động']] : projectTabs;
   const { id } = useParams();
   const [params, setParams] = useSearchParams();
   const query = useResource<Project>(`/api/projects/${encodeURIComponent(id || '')}`);
   const [candidate, setCandidate] = useState<Candidate | null>(null);
-  const selectedTab = ['analysis', 'assignments', 'requirements'].includes(params.get('tab') || '')
+  const selectedTab = visibleTabs.some(([value]) => value === params.get('tab'))
     ? params.get('tab')!
     : 'analysis';
   if (query.isPending) return <Loading />;
@@ -88,7 +92,7 @@ export function ProjectDetail() {
         action={<Badge value={project.status} />}
       />
       <div className="tabs" role="tablist" aria-label="Nội dung dự án">
-        {projectTabs.map(([value, title], index) => (
+        {visibleTabs.map(([value, title], index) => (
           <button
             key={value}
             id={`project-tab-${value}`}
@@ -100,18 +104,18 @@ export function ProjectDetail() {
             onKeyDown={(event) => {
               const next =
                 event.key === 'ArrowRight'
-                  ? (index + 1) % projectTabs.length
+                  ? (index + 1) % visibleTabs.length
                   : event.key === 'ArrowLeft'
-                    ? (index + projectTabs.length - 1) % projectTabs.length
+                    ? (index + visibleTabs.length - 1) % visibleTabs.length
                     : event.key === 'Home'
                       ? 0
                       : event.key === 'End'
-                        ? projectTabs.length - 1
+                        ? visibleTabs.length - 1
                         : null;
               if (next === null) return;
               event.preventDefault();
-              setParams({ tab: projectTabs[next][0] });
-              document.getElementById(`project-tab-${projectTabs[next][0]}`)?.focus();
+              setParams({ tab: visibleTabs[next][0] });
+              document.getElementById(`project-tab-${visibleTabs[next][0]}`)?.focus();
             }}
           >
             {title}
@@ -145,6 +149,7 @@ export function ProjectDetail() {
         {selectedTab === 'requirements' && (
           <SkillRelations ownerId={project.project_id} kind="project" />
         )}
+        {selectedTab === 'activity' && <ActivityFeed projectId={project.project_id} />}
       </div>
       {candidate && (
         <AssignmentDialog

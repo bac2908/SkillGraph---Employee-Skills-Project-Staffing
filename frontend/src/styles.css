@@ -590,6 +590,139 @@ main {
   background: #83a065;
   border-radius: 50%;
 }
+.activity-intro {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.activity-intro > svg {
+  flex-shrink: 0;
+  color: #52704c;
+}
+.activity-intro p {
+  flex: 1;
+  font-size: 13px;
+}
+.activity-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.activity-filters label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  min-width: 0;
+}
+.activity-filter-actions {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.activity-form-error {
+  color: #9b3434;
+  padding: 16px 24px;
+}
+.activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 24px;
+}
+.activity-item {
+  display: flex;
+  gap: 14px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+}
+.activity-item:last-child {
+  border-bottom: 0;
+}
+.activity-body {
+  flex: 1;
+  min-width: 0;
+}
+.activity-item-heading {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.activity-item-heading time {
+  font-size: 12px;
+  color: #65715f;
+}
+.activity-body p {
+  margin-top: 10px;
+  font-size: 13px;
+}
+.activity-resource {
+  display: block;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+.activity-body > .text-link {
+  margin-top: 8px;
+}
+.activity-action {
+  font-weight: 600;
+}
+.activity-deleted {
+  color: #963c3c;
+}
+.activity-created {
+  color: #376647;
+}
+.activity-diff {
+  margin-top: 14px;
+}
+.activity-diff summary {
+  cursor: pointer;
+  color: #375c3e;
+  font-size: 13px;
+  padding: 10px 0;
+}
+.activity-diff table {
+  table-layout: fixed;
+  white-space: normal;
+}
+.activity-diff th,
+.activity-diff td {
+  padding: 12px 10px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  vertical-align: top;
+}
+.activity-diff th:first-child {
+  width: 28%;
+}
+.activity-panel .pagination .icon-button {
+  width: 44px;
+  height: 44px;
+}
+@media (max-width: 700px) {
+  .activity-filters {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+  .activity-intro {
+    flex-wrap: wrap;
+    padding: 18px;
+  }
+  .activity-list {
+    padding: 0 18px;
+  }
+  .activity-item {
+    gap: 9px;
+  }
+  .activity-item > .avatar {
+    display: none;
+  }
+}
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
