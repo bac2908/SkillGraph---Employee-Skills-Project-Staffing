@@ -102,10 +102,12 @@ frontend/src/
 ```
 
 TanStack Query cache dữ liệu và cập nhật lại màn hình sau khi ghi thành công.
-Các danh sách quản lý phân trang ở server (10 bản ghi/trang); dropdown và tổng
-quan đọc đủ các trang, không cắt im lặng ở giới hạn 100 bản ghi. Tổng allocation
-hiện tổng hợp từ danh sách phân công của từng dự án. Khi số dự án lớn, nên bổ sung
-endpoint tổng hợp tại backend để giảm số request.
+Các danh sách quản lý phân trang ở server (10 bản ghi/trang). Dashboard dùng
+`GET /api/dashboard` lấy các tổng và tối đa 5 nhân viên; bộ chọn dự án tìm kiếm và
+phân trang 10 bản ghi, chỉ tải khi mở. Xem [thiết kế và kiểm thử dashboard](dashboard.md).
+Các selector khác còn đọc đủ các trang, không cắt im lặng ở giới hạn 100 bản ghi.
+`useCapacity` trong hộp thoại phân công vẫn tổng hợp từ từng dự án; đây là bước
+tối ưu tiếp theo, không còn nằm trên luồng tải dashboard ban đầu.
 
 `node_modules/`, `dist/`, cache, trace và `.env.local` được bỏ qua bởi Git.
 Chỉ cài thư viện một lần bằng `npm.cmd ci`; không commit `node_modules`.

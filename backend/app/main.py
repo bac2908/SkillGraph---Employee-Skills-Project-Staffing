@@ -29,6 +29,10 @@ app = FastAPI(
             "description": "Application liveness.",
         },
         {
+            "name": "dashboard",
+            "description": "Authenticated workspace counts and bounded capacity overview.",
+        },
+        {
             "name": "employees",
             "description": "Employee profile management.",
         },

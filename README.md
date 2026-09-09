@@ -18,6 +18,11 @@ npm.cmd run dev
 Open <http://127.0.0.1:5173>. See [frontend setup and testing](docs/frontend.md)
 for configuration, architecture, and browser tests.
 
+The overview now uses a bounded, authenticated `GET /api/dashboard` aggregate
+instead of loading all catalogues and assignments on initial page load. Project
+selection is searchable and paginated. See [dashboard design and tests](docs/dashboard.md)
+and the [proposed next steps and audit design](docs/next-steps.md).
+
 ## Login and access control
 
 The frontend is implemented: dashboard, employee/skill/project management,
@@ -63,6 +68,7 @@ Origin and X-CSRF-Token from `/api/auth/me`. The frontend handles these automati
 ## API endpoints
 
 - `GET /health`
+- `GET /api/dashboard` (authenticated workspace overview)
 - `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`
 - `POST /api/auth/password`
 - `GET|POST /api/auth/users` (Admin)

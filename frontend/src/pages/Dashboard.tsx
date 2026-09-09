@@ -189,7 +189,7 @@ export function Dashboard() {
         <section className="panel capacity-panel">
           <SectionHeading
             title="Nhịp làm việc của đội ngũ"
-            detail="5 người có mức phân bổ thấp nhất · tính trên tất cả dự án."
+            detail="Tối đa 5 người có mức phân bổ thấp nhất · tính trên tất cả dự án."
           />
           {overview.isPending ? (
             <Loading />

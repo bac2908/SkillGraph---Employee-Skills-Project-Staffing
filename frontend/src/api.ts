@@ -84,7 +84,7 @@ export function useResource<T>(path: string | null) {
   });
 }
 
-// Fetch every page for selectors/overview; never silently truncate at API limit 100.
+// Fetch every page for legacy selectors; never silently truncate at API limit 100.
 export async function getAll<T>(resource: string, signal?: AbortSignal): Promise<T[]> {
   const result: T[] = [];
   let offset = 0;
