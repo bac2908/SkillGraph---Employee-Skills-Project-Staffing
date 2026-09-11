@@ -2,19 +2,23 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from app.api.auth import router as auth_router
 from app.api.errors import register_exception_handlers
 from app.api.router import api_router
 from app.db.graph import graph_db
 from app.schemas.common import HealthResponse
+from app.services.readiness_service import ReadinessChecker
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+async def lifespan(application: FastAPI) -> AsyncIterator[None]:
+    application.state.readiness = ReadinessChecker()
     try:
         yield
     finally:
+        await application.state.readiness.close()
         graph_db.close()
 
 
@@ -73,7 +77,7 @@ register_exception_handlers(app)
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
-    if request.url.path.startswith("/api/"):
+    if request.url.path.startswith(("/api/", "/health")):
         response.headers["Cache-Control"] = "no-store"
         response.headers["Pragma"] = "no-cache"
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -89,6 +93,23 @@ async def security_headers(request: Request, call_next):
 )
 def health_check() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get(
+    "/health/ready",
+    tags=["health"],
+    response_model=HealthResponse,
+    summary="Check dependency readiness (cached, bounded, no sensitive details)",
+    responses={503: {"model": HealthResponse}},
+)
+async def readiness_check(request: Request):
+    checks = await request.app.state.readiness.check()
+    ready = all(value == "ok" for value in checks.values())
+    return JSONResponse(
+        status_code=200 if ready else 503,
+        content={"status": "ready" if ready else "not_ready"},
+        headers={"Retry-After": "5"} if not ready else None,
+    )
 
 
 app.include_router(api_router)

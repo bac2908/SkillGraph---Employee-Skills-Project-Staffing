@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     auth_cookie_secure: bool = False
     auth_session_hours: int = Field(default=8, ge=1, le=24)
     auth_idle_minutes: int = Field(default=30, ge=5, le=120)
+    readiness_timeout_seconds: float = Field(default=4, ge=1, le=10)
+    readiness_cache_seconds: float = Field(default=5, ge=1, le=30)
     auth_allowed_origins: list[str] = [
         "http://127.0.0.1:5173",
         "http://localhost:5173",

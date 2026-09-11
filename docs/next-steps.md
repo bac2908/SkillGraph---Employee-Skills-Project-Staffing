@@ -11,7 +11,7 @@ không coi các đề xuất còn lại là tính năng đã có.
 | --- | --- | --- | --- |
 | 1 — đã làm | Dashboard tổng hợp | Loại tải cả danh mục và request theo từng dự án khi mở tổng quan | Tổng chính xác, response có giới hạn, lỗi rõ ràng, test BE/FE |
 | 2 — đã làm phần dự án | Nhật ký thay đổi | Trả lời ai sửa dự án/phân công/yêu cầu kỹ năng; audit tài khoản/quyền còn thiếu | Cùng graph transaction, Admin-only, trước/sau, lọc, cursor; xem giới hạn engine trong tài liệu |
-| 3 | Readiness, backup và phục hồi | Xác nhận ứng dụng thực sự dùng được và dữ liệu có thể khôi phục | Kiểm tra DB với timeout; thử restore bằng môi trường riêng |
+| 3 — đã có công cụ; xem trạng thái drill | Readiness, backup và phục hồi | Kiểm tra DB với timeout; backup logic graph + SQLite, verify và restore riêng | [Readiness](readiness.md), [quy trình và kết quả phục hồi](backup-restore.md); chưa có lịch tự động/offsite/production |
 | 4 | Một môi trường staging HTTPS | Kiểm tra toàn bộ luồng ngoài máy cá nhân | Cookie/origin đúng; secrets tách biệt; chưa chứa dữ liệu nhạy cảm thật |
 | 5 | Giám sát và kiểm thử tải | Có số đo trước khi quyết định mở rộng | Ghi nhận độ trễ p95, tỷ lệ lỗi và tài nguyên dưới tải có kiểm soát |
 | Theo nhu cầu | Email reset, MFA/SSO | Phụ thuộc cách tổ chức quản lý danh tính | Chọn nhà cung cấp/chính sách trước; kiểm thử hết hạn, thu hồi và phục hồi |

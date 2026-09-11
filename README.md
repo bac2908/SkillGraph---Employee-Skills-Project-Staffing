@@ -74,6 +74,7 @@ Origin and X-CSRF-Token from `/api/auth/me`. The frontend handles these automati
 ## API endpoints
 
 - `GET /health`
+- `GET /health/ready` (bounded dependency readiness, 200 or 503)
 - `GET /api/dashboard` (authenticated workspace overview)
 - `GET /api/activity` (Admin-only project history, cursor pagination)
 - `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`
@@ -108,6 +109,17 @@ and return `200 OK`. Employee allocation is an integer percentage from 1 to 100.
 All `WORKS_ON` relationships for one employee may total at most 100%; this rule
 is checked under a per-employee database lock to remain correct under concurrent
 requests.
+
+## Readiness and recovery
+
+`/health` remains process liveness; `/health/ready` checks graph/schema and the
+existing auth store without bootstrapping a missing database. See
+[readiness checks](docs/readiness.md).
+
+Local recovery commands now support a versioned graph + SQLite backup, checksum
+verification and isolated restore. Pause all writers before backup; never use
+the live graph as a restore target. No automated retention or production cutover
+is enabled. See [backup/restore procedure and verification status](docs/backup-restore.md).
 
 ## Validation
 

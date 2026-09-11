@@ -1,6 +1,12 @@
 # Environment
 .env
 .env.local
+.env.restore
+
+# Database backups and isolated recovery output (contain sensitive data)
+backups/
+restore-drills/
+*.skillgraph-backup/
 
 # Python
 __pycache__/

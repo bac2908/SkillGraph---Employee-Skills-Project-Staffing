@@ -10,12 +10,14 @@ tính năng. Quy ước này được lưu ở [AGENTS.md](../AGENTS.md).
 | [Đăng nhập và phân quyền](authentication.md) | Admin/Manager/Viewer, session, CSRF, SQLite và giới hạn triển khai |
 | [Dashboard tổng hợp](dashboard.md) | API tổng hợp, dữ liệu có giới hạn, cách tải và kiểm thử |
 | [Nhật ký hoạt động dự án](project-activity.md) | Actor, dữ liệu trước/sau, transaction, API, giao diện và migration |
+| [Kiểm tra sẵn sàng](readiness.md) | Liveness/readiness, timeout, cache và xử lý dependency lỗi |
+| [Sao lưu và phục hồi](backup-restore.md) | Backup graph + SQLite, checksum, phục hồi vào nơi riêng và giới hạn |
 | [Lộ trình tiếp theo](next-steps.md) | Việc đã làm, phần còn thiếu và ưu tiên vận hành |
 
 ## Quy ước đặt tên và nội dung
 
 - Tên file chữ thường, dùng dấu gạch ngang: `project-activity.md`,
-  `backup-restore.md`. Tên thứ hai là ví dụ cho tài liệu tương lai, chưa được tạo.
+  `backup-restore.md`.
 - Ghi rõ mục đích, phạm vi đã làm/chưa làm, file mã nguồn và API liên quan.
 - Có hướng dẫn cấu hình/migration, phân quyền, cách sử dụng, lệnh kiểm thử và
   kết quả thực tế; không dùng kết quả mock để tuyên bố production đã sẵn sàng.

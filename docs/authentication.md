@@ -98,6 +98,11 @@ phục vụ thư mục `backend/data/` dưới dạng static; chỉ cấp quyề
 tài khoản chạy backend và người quản trị. Sao lưu file này như dữ liệu nhạy cảm,
 ở ngoài Git, bằng SQLite backup hoặc khi backend đã dừng. Không xóa cùng cache.
 
+Đã có [công cụ sao lưu/phục hồi](backup-restore.md) tạo cặp graph + SQLite và
+kiểm tra checksum. Phục hồi chỉ vào nơi riêng, thu hồi phiên trong bản được
+phục hồi, không ghi đè kho đang dùng. Xem [readiness](readiness.md) để phát hiện
+DB bị mất/khóa hoặc thiếu schema mà không tự tạo DB mới.
+
 ## Cấu hình
 
 Các giá trị có thể đặt qua environment variables hoặc `backend/.env`:
