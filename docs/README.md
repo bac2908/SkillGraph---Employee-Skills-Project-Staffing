@@ -7,6 +7,7 @@ tính năng. Quy ước này được lưu ở [AGENTS.md](../AGENTS.md).
 | Tài liệu | Nội dung |
 | --- | --- |
 | [Giao diện](frontend.md) | Chạy FE, chức năng, cấu hình API và kiểm thử trình duyệt |
+| [Nâng cấp giao diện UI/UX](ui-redesign.md) | Thiết kế mới Emerald Glassmorphic, typography, màu sắc và E2E |
 | [Đăng nhập và phân quyền](authentication.md) | Admin/Manager/Viewer, session, CSRF, SQLite và giới hạn triển khai |
 | [Dashboard tổng hợp](dashboard.md) | API tổng hợp, dữ liệu có giới hạn, cách tải và kiểm thử |
 | [Nhật ký hoạt động dự án](project-activity.md) | Actor, dữ liệu trước/sau, transaction, API, giao diện và migration |
