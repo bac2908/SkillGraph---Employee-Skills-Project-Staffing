@@ -1,5 +1,6 @@
 """Isolated browser test server. Never points at the user's graph/auth databases."""
 
+import argparse
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -9,7 +10,7 @@ os.environ["COGNODB_USER"] = "browser-test"
 os.environ["COGNODB_PASSWORD"] = "not-a-real-credential"
 
 
-def main():
+def main(*, rbac=False):
     import uvicorn
 
     from app.api import activity, dashboard, employees, projects, skills
@@ -44,7 +45,9 @@ def main():
         "default_project": None,
     }
     with TemporaryDirectory(prefix="skillgraph-auth-browser-") as directory:
-        store = AuthStore(Path(directory) / "auth.sqlite3")
+        # Also isolate the configured path, not only the dependency override.
+        settings.auth_db_path = Path(directory) / "auth.sqlite3"
+        store = AuthStore(settings.auth_db_path)
         store.create_user(
             {
                 "email": "browser-admin@example.com",
@@ -54,6 +57,10 @@ def main():
             },
             bootstrap=True,
         )
+        if rbac:
+            from tests.rbac_browser_data import install_rbac_data
+
+            install_rbac_data(store)
         app.dependency_overrides[get_auth_store] = lambda: store
         uvicorn.run(
             app, host="127.0.0.1", port=18000, access_log=False, proxy_headers=False
@@ -61,4 +68,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--rbac", action="store_true")
+    main(rbac=parser.parse_args().rbac)

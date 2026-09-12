@@ -15,6 +15,7 @@
     "format:check": "node node_modules/prettier/bin/prettier.cjs --check src tests *.ts *.json index.html",
     "test": "node node_modules/@playwright/test/cli.js test",
     "test:auth-stack": "node node_modules/@playwright/test/cli.js test --config playwright.auth-stack.config.ts",
+    "test:rbac": "node node_modules/@playwright/test/cli.js test --config playwright.rbac.config.ts",
     "test:live": "node node_modules/@playwright/test/cli.js test --config playwright.live.config.ts"
   },
   "dependencies": {

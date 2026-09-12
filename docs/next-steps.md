@@ -5,6 +5,12 @@
 Chưa triển khai toàn bộ các hạng mục vận hành. Trạng thái cụ thể ghi dưới đây;
 không coi các đề xuất còn lại là tính năng đã có.
 
+Ngày 12/09/2026 đã bổ sung [công cụ khôi phục Admin cục bộ](admin-recovery.md):
+không cần mật khẩu cũ, không tạo DB/tài khoản, chỉ xử lý Admin đang hoạt động,
+thu hồi phiên và buộc đổi mật khẩu tạm. Kiểm thử bằng DB tạm; không đặt lại
+mật khẩu Admin thật. Phần này không bổ sung audit tài khoản/quyền hoặc triển
+khai các hạng mục vận hành còn lại.
+
 ## Thứ tự ưu tiên đề xuất
 
 | Thứ tự | Hạng mục | Lý do | Điều kiện nghiệm thu |

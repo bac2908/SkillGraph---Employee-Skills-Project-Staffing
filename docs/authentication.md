@@ -70,8 +70,11 @@ trình duyệt gửi lên. Giới hạn allocation 100% tại database vẫn gi�
 - Không cho phép tự khóa/hạ quyền Admin đang thao tác hoặc bỏ Admin hoạt động
   cuối cùng. Không xóa vật lý tài khoản; dùng khóa tài khoản.
 - Quên mật khẩu: liên hệ một Admin khác để đặt lại. Chưa có email tự khôi phục,
-  MFA hoặc SSO. Nếu mất quyền truy cập Admin duy nhất, cần quy trình khôi phục
-  quản trị có kiểm soát; **không xóa file auth.sqlite3 để tạo lại**.
+  MFA hoặc SSO. Nếu mất quyền truy cập Admin duy nhất, đã có
+  [CLI khôi phục cục bộ](admin-recovery.md) cho người vận hành được phép ghi
+  DB: chỉ xử lý Admin đang hoạt động, nhập ẩn mật khẩu tạm, thu hồi phiên và
+  buộc đổi mật khẩu sau đăng nhập. **Không xóa file auth.sqlite3 để tạo lại**.
+  Nếu vẫn nhớ mật khẩu, không cần chạy CLI khôi phục.
 
 ## Phiên đăng nhập và lưu trữ
 

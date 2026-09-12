@@ -203,3 +203,39 @@ Phục hồi graph thật vào instance test và bộ backup dữ liệu thật 
 sau khi có cấu hình `.env.restore` và xác nhận tạm dừng ghi. **Chưa coi kết quả
 mock là restore drill trên CognoDB đã đạt.** Kết quả thực tế sẽ được cập nhật
 tại đây khi thực hiện xong; không có báo cáo production/load test trong đợt này.
+
+## Tiền kiểm cho lần phục hồi thật — 12/09/2026
+
+Trạng thái: **chưa chạy backup/restore thật, đang chờ cấu hình đích và xác nhận
+tạm dừng các bên ghi**. Đây là kiểm tra điều kiện, không phải báo cáo phục hồi đạt.
+
+Kết quả kiểm tra chỉ đọc:
+
+- Graph nguồn kết nối được và dữ liệu nằm trong phạm vi định dạng xuất hiện
+  tại: 26 node, 65 quan hệ. Chỉ xuất vào bộ nhớ để kiểm tra; chưa tạo file backup.
+- SQLite auth nguồn qua kiểm tra toàn vẹn/schema, có 1 tài khoản. Không thay
+  mật khẩu, thu hồi phiên hoặc chỉnh sửa tài khoản trong bước này.
+- Ổ D còn khoảng 56,67 GiB tại thời điểm kiểm tra, vượt mức dung lượng tối
+  thiểu của công cụ. Đây không phải dung lượng bộ backup sẽ chiếm.
+- `.env`, `.env.restore` và các đường dẫn backup/restore trong `backend/data/`
+  được Git bỏ qua.
+- Không phát hiện listener ở cổng local 8000 trong lần kiểm tra. Điều này
+  **không chứng minh** mọi script, worker hoặc bên ghi Cypher khác đã dừng.
+- `backend/.env.restore` đã tồn tại, nhưng `COGNODB_URI` và `COGNODB_PASSWORD`
+  còn trống. Chưa kết nối instance đích hoặc xác minh đích trống/khác nguồn.
+
+Để tiếp tục:
+
+1. Người vận hành điền thông tin **instance test riêng** vào `.env.restore`
+   trên máy, kiểm tra cả `COGNODB_USER`. Không sao chép endpoint nguồn làm
+   đích, không gửi credentials vào chat hoặc tài liệu.
+2. Xác nhận instance đích riêng, trống, được phép chứa bản sao này và không có
+   bên khác sử dụng trong thời gian phục hồi.
+3. Xác nhận đã tạm dừng backend, script seed/import và mọi bên ghi trực tiếp
+   trong thời gian backup. Giữ các instance CognoDB hoạt động để kết nối.
+4. Chạy lại kiểm tra đích, tạo bộ backup mới, verify, restore vào nơi riêng
+   và đối chiếu kết quả theo quy trình ở trên. Không chuyển app sang đích test.
+
+Chưa tạo bộ backup, bản SQLite phục hồi, schema hoặc dữ liệu graph trên đích;
+chưa có `restore-report.json` cho lần thử này. Giữ nguyên trạng thái chưa đạt
+cho đến khi có kết quả thực tế và báo cáo kiểm chứng.

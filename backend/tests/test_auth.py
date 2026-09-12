@@ -2,6 +2,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,6 +10,7 @@ from fastapi.testclient import TestClient
 from app.api.auth_dependencies import COOKIE_NAME, get_auth_store
 from app.core.config import settings
 from app.core.exceptions import ResourceNotFoundError
+from app.db.graph import graph_db
 from app.main import app
 from app.repositories.auth_store import AuthError, AuthStore, digest
 
@@ -460,3 +462,152 @@ def test_tampered_cookie_and_csrf_cannot_authenticate(setup):
     client.cookies.clear()
     client.cookies.set(COOKIE_NAME, "tampered-token")
     assert client.get("/api/auth/me").status_code == 401
+
+
+@pytest.mark.parametrize("role", ["VIEWER", "MANAGER"])
+def test_rbac_all_business_writes_denied_outside_role_or_grant(
+    setup, role, monkeypatch
+):
+    client, store, _ = setup
+    user = ready_user(store, role, ["PROJ001"] if role == "MANAGER" else [])
+    login(client, user["email"])
+    blocked_graph = MagicMock(side_effect=AssertionError("Graph must not be reached"))
+    monkeypatch.setattr(graph_db.driver, "session", blocked_graph)
+    for method, path in BUSINESS_ROUTES:
+        if method == "GET":
+            continue
+        target = path.replace("PROJ001", "PROJ002") if role == "MANAGER" else path
+        response = client.request(method, target, json={})
+        assert response.status_code == 403, (method, target, response.status_code)
+        assert response.json()["detail"] == "Bạn không có quyền thay đổi dữ liệu này."
+    for method, path, payload in [
+        ("GET", "/api/auth/users", None),
+        ("GET", "/api/activity", None),
+        (
+            "POST",
+            "/api/auth/users",
+            {
+                "email": "new@example.com",
+                "name": "New",
+                "password": PASSWORD,
+                "role": "ADMIN",
+            },
+        ),
+        (
+            "PATCH",
+            f"/api/auth/users/{user['user_id']}",
+            {"role": "ADMIN", "is_active": True},
+        ),
+        (
+            "POST",
+            f"/api/auth/users/{user['user_id']}/password",
+            {"password": NEW_PASSWORD},
+        ),
+    ]:
+        assert client.request(method, path, json=payload).status_code == 403
+    blocked_graph.assert_not_called()
+
+
+@pytest.mark.parametrize("role", ["ADMIN", "MANAGER", "VIEWER"])
+def test_rbac_password_gate_covers_all_business_routes(setup, role, monkeypatch):
+    client, store, _ = setup
+    user = ready_user(store, role, ["PROJ001"] if role == "MANAGER" else [])
+    store.reset_password(user["user_id"], NEW_PASSWORD)
+    login(client, user["email"], NEW_PASSWORD)
+    blocked_graph = MagicMock(side_effect=AssertionError("Graph must not be reached"))
+    monkeypatch.setattr(graph_db.driver, "session", blocked_graph)
+    for method, path in BUSINESS_ROUTES:
+        assert client.request(method, path, json={}).status_code == 403, (method, path)
+    assert client.get("/api/auth/users").status_code == 403
+    assert client.get("/api/auth/me").json()["user"]["must_change_password"] is True
+    blocked_graph.assert_not_called()
+
+
+def test_rbac_manager_positive_2xx_for_all_five_granted_write_routes(
+    setup, monkeypatch
+):
+    client, store, _ = setup
+    user = ready_user(store, "MANAGER", ["PROJ001"])
+    login(client, user["email"])
+    blocked_graph = MagicMock(side_effect=AssertionError("Use synthetic services only"))
+    monkeypatch.setattr(graph_db.driver, "session", blocked_graph)
+    project = {
+        "project_id": "PROJ001",
+        "name": "Test Project",
+        "description": "Updated",
+        "status": "ACTIVE",
+    }
+    assignment = {
+        "project_id": "PROJ001",
+        "project_name": "Test Project",
+        "employee_id": "EMP001",
+        "employee_name": "Test Employee",
+        "role": "Developer",
+        "allocation": 20,
+        "employee_total_allocation": 20,
+        "employee_remaining_allocation": 80,
+    }
+    requirement = {
+        "project_id": "PROJ001",
+        "project_name": "Test Project",
+        "skill_id": "SK001",
+        "skill_name": "Python",
+        "category": "Programming",
+        "min_level": 3,
+        "priority": "MUST",
+    }
+    cases = [
+        (
+            "PATCH",
+            "",
+            {"description": "Updated"},
+            "projects.project_service.update",
+            project,
+            200,
+        ),
+        (
+            "PUT",
+            "/assignments/EMP001",
+            {"role": "Developer", "allocation": 20},
+            "project_assignments.service.upsert",
+            (assignment, True),
+            201,
+        ),
+        (
+            "DELETE",
+            "/assignments/EMP001",
+            None,
+            "project_assignments.service.delete",
+            None,
+            204,
+        ),
+        (
+            "PUT",
+            "/requirements/SK001",
+            {"min_level": 3, "priority": "MUST"},
+            "project_requirements.service.upsert",
+            (requirement, True),
+            201,
+        ),
+        (
+            "DELETE",
+            "/requirements/SK001",
+            None,
+            "project_requirements.service.delete",
+            None,
+            204,
+        ),
+    ]
+    for method, suffix, payload, service, value, expected in cases:
+        operation = MagicMock(return_value=value)
+        monkeypatch.setattr("app.api." + service, operation)
+        response = client.request(
+            method, "/api/projects/PROJ001" + suffix, json=payload
+        )
+        assert response.status_code == expected, response.text
+        assert operation.call_count == 1
+        assert operation.call_args.kwargs["actor"].user_id == user["user_id"]
+        denied = client.request(method, "/api/projects/PROJ002" + suffix, json=payload)
+        assert denied.status_code == 403
+        assert operation.call_count == 1, "Denied call must not execute mutation"
+    blocked_graph.assert_not_called()

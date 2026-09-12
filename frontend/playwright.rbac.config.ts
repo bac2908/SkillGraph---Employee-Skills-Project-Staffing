@@ -1,16 +1,15 @@
 import { defineConfig } from '@playwright/test';
-import config from './playwright.config';
+import config from './playwright.auth-stack.config';
 
 export default defineConfig({
   ...config,
-  testMatch: 'auth-stack.spec.ts',
-  outputDir: 'test-results/auth-stack',
-  fullyParallel: false,
-  workers: 1,
-  use: { ...config.use, baseURL: 'http://127.0.0.1:5174', trace: 'off', screenshot: 'off' },
+  testMatch: 'rbac.spec.ts',
+  outputDir: 'test-results/rbac',
+  retries: 0,
+  use: { ...config.use, video: 'off' },
   webServer: [
     {
-      command: '.venv\\Scripts\\python.exe -B -m tests.auth_browser_server',
+      command: '.venv\\Scripts\\python.exe -B -m tests.auth_browser_server --rbac',
       cwd: '../backend',
       url: 'http://127.0.0.1:18000/health',
       reuseExistingServer: false,

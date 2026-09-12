@@ -47,6 +47,10 @@ Create your first Admin interactively (no default credentials), from `backend`:
 ```
 
 See [authentication setup, permissions and deployment safeguards](docs/authentication.md).
+If the only Admin cannot sign in because of a forgotten password, authorized
+operators can use the [local Admin recovery CLI](docs/admin-recovery.md). It
+requires interactive confirmation, resets only an existing active Admin, revokes
+old sessions and forces a password change. Do not run it if recovery is not needed.
 Account/session data lives in ignored `backend/data/auth.sqlite3`, separately
 from CognoDB. Do not delete it as cache or commit it to Git.
 

@@ -96,6 +96,10 @@ Các điểm cần hiểu đúng:
 
 Chi tiết và các giới hạn quản trị Admin: [Đăng nhập và phân quyền](authentication.md).
 
+Đã có [công cụ khôi phục Admin cục bộ](admin-recovery.md) khi quên mật khẩu:
+người vận hành xác nhận đúng tài khoản, nhập ẩn mật khẩu tạm và thu hồi phiên.
+Không phải API công khai, không mở khóa/nâng quyền và không thay thế email reset.
+
 ## 4. Một quy trình sử dụng từ đầu đến cuối
 
 1. **Chuẩn bị dữ liệu:** Admin tạo danh mục kỹ năng, hồ sơ nhân viên và khai báo
@@ -437,6 +441,7 @@ không dùng tỷ lệ coverage thay cho KPI năng suất hoặc chất lượng
 | Cài đặt và danh sách API | [README dự án](../README.md) |
 | Giao diện, cách chạy và test trình duyệt | [Frontend](frontend.md), [UI/UX](ui-redesign.md) |
 | Tài khoản, role, session và giới hạn bảo mật | [Đăng nhập và phân quyền](authentication.md) |
+| Quên mật khẩu Admin duy nhất | [Công cụ khôi phục Admin cục bộ](admin-recovery.md) |
 | API tổng quan và giới hạn hiệu năng | [Dashboard](dashboard.md) |
 | Truy vết thay đổi, transaction và giới hạn engine | [Nhật ký dự án](project-activity.md) |
 | Kiểm tra ứng dụng/DB sẵn sàng | [Readiness](readiness.md) |
