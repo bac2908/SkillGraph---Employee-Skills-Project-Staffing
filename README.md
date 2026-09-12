@@ -3,6 +3,10 @@
 SkillGraph is a FastAPI and Neo4j application for analyzing a project's skill
 coverage and recommending available employees for uncovered skills.
 
+New to the project? Start with the Vietnamese [project overview](docs/tong-quan-du-an.md)
+for its purpose, business value, user roles, workflow, architecture, current scope
+and proposed completion criteria.
+
 ## Frontend dashboard
 
 The Vietnamese React/TypeScript dashboard supports employee, skill, and project

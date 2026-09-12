@@ -1,11 +1,16 @@
 # Tài liệu SkillGraph
 
+**Mới tìm hiểu dự án?** Đọc [Tổng quan dự án](tong-quan-du-an.md) trước để hiểu
+mục đích, bài toán doanh nghiệp, người dùng, luồng nghiệp vụ và kết quả hướng
+tới khi hoàn thiện; tài liệu phân biệt rõ phần đã có với mục tiêu còn lại.
+
 Tài liệu được lưu cùng mã nguồn. Mỗi tính năng mới hoặc thay đổi hành vi đáng kể
 phải có tài liệu tiếng Việt trong `docs/`; cập nhật tài liệu tương ứng khi mở rộng
 tính năng. Quy ước này được lưu ở [AGENTS.md](../AGENTS.md).
 
 | Tài liệu | Nội dung |
 | --- | --- |
+| [Tổng quan dự án — đọc trước](tong-quan-du-an.md) | Mục đích, giá trị doanh nghiệp, role, quy trình, kiến trúc, trạng thái và tiêu chí hoàn thành |
 | [Giao diện](frontend.md) | Chạy FE, chức năng, cấu hình API và kiểm thử trình duyệt |
 | [Nâng cấp giao diện UI/UX](ui-redesign.md) | Thiết kế mới Emerald Glassmorphic, typography, màu sắc và E2E |
 | [Đăng nhập và phân quyền](authentication.md) | Admin/Manager/Viewer, session, CSRF, SQLite và giới hạn triển khai |
