@@ -45,10 +45,10 @@ export function Dashboard() {
       tone: 'green',
     },
     {
-      title: 'Sẵn sàng kết nối',
+      title: 'Trạng thái sẵn sàng',
       value: summary?.available_employee_count,
       icon: UserRoundCheck,
-      note: 'Theo trạng thái nhân viên',
+      note: 'Không đồng nghĩa còn dung lượng',
       to: '/employees',
       tone: 'mint',
     },
@@ -189,7 +189,7 @@ export function Dashboard() {
         <section className="panel capacity-panel">
           <SectionHeading
             title="Nhịp làm việc của đội ngũ"
-            detail="Tối đa 5 người có mức phân bổ thấp nhất · tính trên tất cả dự án."
+            detail="Tối đa 5 người có mức phân bổ thấp nhất. Số % là phần đã phân bổ trên tất cả dự án, không phải phần còn trống."
           />
           {overview.isPending ? (
             <Loading />

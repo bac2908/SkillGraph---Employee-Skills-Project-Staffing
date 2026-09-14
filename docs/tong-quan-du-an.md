@@ -408,10 +408,15 @@ npm.cmd run typecheck
 npm.cmd run build
 npm.cmd test
 npm.cmd run test:auth-stack
+npm.cmd run test:rbac
 ```
 
 Test FE thông thường dùng API giả lập; `test:auth-stack` dùng FastAPI và SQLite
 tạm thật nhưng graph được stub. Không gọi đó là E2E đầy đủ với graph thật.
+`test:rbac` kiểm chứng đủ ba role bằng UI và API trực tiếp trong cùng phạm vi
+cô lập. Báo cáo ngày 14/09/2026 ghi 10 test đạt, tương ứng 9/9 trường hợp yêu
+cầu; xem [nghiệm thu ba role](rbac-acceptance.md) để biết lệnh, bằng chứng và
+giới hạn. Kết quả này không tự đóng checklist bàn giao hoặc drill phục hồi thật.
 Các integration test có thể tạo/xóa dữ liệu; đọc tài liệu từng nhóm trước khi
 chạy, không chạy toàn bộ `-m integration` trên DB production.
 
@@ -441,6 +446,7 @@ không dùng tỷ lệ coverage thay cho KPI năng suất hoặc chất lượng
 | Cài đặt và danh sách API | [README dự án](../README.md) |
 | Giao diện, cách chạy và test trình duyệt | [Frontend](frontend.md), [UI/UX](ui-redesign.md) |
 | Tài khoản, role, session và giới hạn bảo mật | [Đăng nhập và phân quyền](authentication.md) |
+| Bằng chứng nghiệm thu đủ ba role qua UI và API | [Nghiệm thu ba role](rbac-acceptance.md) |
 | Quên mật khẩu Admin duy nhất | [Công cụ khôi phục Admin cục bộ](admin-recovery.md) |
 | API tổng quan và giới hạn hiệu năng | [Dashboard](dashboard.md) |
 | Truy vết thay đổi, transaction và giới hạn engine | [Nhật ký dự án](project-activity.md) |

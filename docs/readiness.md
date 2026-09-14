@@ -120,6 +120,14 @@ Test readiness qua HTTP trên cấu hình thật và test hồi quy dashboard ch
 đều đạt; test FE–FastAPI auth cô lập cũng đạt. Tổng backend không integration
 cùng bộ backup/restore: 170 passed, gồm 48 test mới của đợt này.
 
+Trong đợt [nghiệm thu RBAC ngày 14/09/2026](rbac-acceptance.md), test cache bị
+thất bại do TTL 10 ms hết hạn khi máy bận lên lịch tác vụ. Đã sửa riêng
+`test_single_flight_cache_and_expiry` dùng đồng hồ cache giả lập, kiểm tra
+20 yêu cầu đồng thời, bản sao kết quả, trước/đúng ranh giới hết hạn và cleanup
+driver. Không thay logic readiness hoặc timeout production; không tăng sleep
+hay bỏ assertion để né lỗi. Các kết quả 170 test phía trên là mốc cũ, không
+phải số lượng kiểm thử hiện tại; kết quả chạy lại ghi trong báo cáo RBAC.
+
 Không kiểm tra khả năng ghi mọi loại dữ liệu graph, toàn bộ hình dạng constraint,
 trạng thái index, mọi API nghiệp vụ, chất lượng backup, hiệu năng tải lớn hoặc
 khả năng chống mất điện. Các kiểm tra sâu được tách khỏi hot health endpoint.

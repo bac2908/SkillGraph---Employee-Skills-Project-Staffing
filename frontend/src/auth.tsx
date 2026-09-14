@@ -31,20 +31,22 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
-  forget: (notice?: string) => void;
-  notice: string | null;
+  forget: (notice?: string, tone?: 'info' | 'success') => void;
+  notice: { message: string; tone: 'info' | 'success' } | null;
   notifyTabs: () => void;
   isAdmin: boolean;
   canManageProject: (id: string) => boolean;
 }
 const AuthContext = createContext<AuthContextValue | null>(null);
+const sessionEnded =
+  'Phiên đăng nhập đã hết hạn hoặc bị thu hồi. Vui lòng đăng nhập lại để tiếp tục.';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const client = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<AuthContextValue['notice']>(null);
   const currentId = useRef<string | null>(null);
   const revision = useRef(0);
   const channel = useRef<BroadcastChannel | null>(null);
@@ -53,8 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     client.clear();
   }, [client]);
   const forget = useCallback(
-    (message?: string) => {
-      if (message) setNotice(message);
+    (message?: string, tone: 'info' | 'success' = 'info') => {
+      if (message) setNotice({ message, tone });
       revision.current++;
       currentId.current = null;
       setCsrfToken(null);
@@ -84,13 +86,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (version === revision.current) accept(session);
     } catch (err) {
       if (version !== revision.current) return;
-      forget();
-      if (!(err instanceof ApiError && err.status === 401)) setError(err);
+      if (err instanceof ApiError && err.status === 401) {
+        forget(currentId.current ? sessionEnded : undefined);
+      } else {
+        // A transient check failure is not evidence of an invalid session.
+        // Keep an already-open draft; every business request is still authorized by BE.
+        setError(err);
+        setLoading(false);
+      }
     }
   }, [accept, forget]);
   useEffect(() => {
     void refresh();
-    const lost = () => forget();
+    const lost = () => forget(sessionEnded);
     const focused = () => {
       void refresh();
     };

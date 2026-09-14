@@ -93,7 +93,7 @@ export function CandidateSuggestions({
     <section className="panel recommendations">
       <SectionHeading
         title="Những mảnh ghép phù hợp"
-        detail="Gợi ý theo kỹ năng còn thiếu và kinh nghiệm cộng tác."
+        detail="Xếp hạng tham khảo theo kỹ năng còn thiếu và cộng tác."
         action={
           <span className="subtle-label">
             <Sparkles size={16} />
@@ -101,6 +101,10 @@ export function CandidateSuggestions({
           </span>
         }
       />
+      <p className="workflow-note">
+        Gợi ý chưa lọc theo allocation còn lại. Được gợi ý không có nghĩa chắc chắn nhận thêm việc;
+        hãy kiểm tra phân bổ và xác nhận với người quản lý trước khi giao việc.
+      </p>
       {query.isPending ? (
         <Loading />
       ) : query.isError ? (
@@ -147,7 +151,7 @@ export function CandidateSuggestions({
               </div>
               {canManageProject(projectId) ? (
                 <button className="button secondary" onClick={() => onAssign(candidate)}>
-                  Xem & phân công
+                  Kiểm tra phân bổ
                   <ArrowUpRight size={16} />
                 </button>
               ) : (

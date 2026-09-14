@@ -54,6 +54,16 @@ old sessions and forces a password change. Do not run it if recovery is not need
 Account/session data lives in ignored `backend/data/auth.sqlite3`, separately
 from CognoDB. Do not delete it as cache or commit it to Git.
 
+Run `npm.cmd run test:rbac` from `frontend` for isolated three-role acceptance
+through the UI and direct API calls. It uses real FastAPI/auth with temporary
+SQLite and synthetic business services, not your graph or accounts. See the
+Vietnamese [RBAC acceptance report and limitations](docs/rbac-acceptance.md).
+
+For opt-in write acceptance against a dedicated empty graph, use the guarded
+backend runner documented in [real graph E2E acceptance](docs/graph-e2e-acceptance.md).
+This separate suite is prepared but has not yet been run on the test instance;
+never point it at the working graph or reuse real account credentials.
+
 ## Backend setup
 
 ```powershell

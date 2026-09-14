@@ -34,7 +34,7 @@ const nav = [
 export default function App() {
   const auth = useAuth();
   const location = useLocation();
-  if (auth.loading || auth.error) return <SessionLoading />;
+  if (auth.loading || (auth.error && !auth.user)) return <SessionLoading />;
   if (!auth.user)
     return location.pathname === '/login' ? (
       <LoginPage />
@@ -195,6 +195,9 @@ function AppShell() {
             </div>
           </header>
           <main id="main" tabIndex={-1}>
+            {auth.error != null && (
+              <ErrorNotice error={auth.error} retry={() => void auth.refresh()} />
+            )}
             {logoutError != null && <ErrorNotice error={logoutError} />}
             <Routes>
               <Route path="/account" element={<AccountPage />} />

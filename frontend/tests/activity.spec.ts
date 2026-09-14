@@ -117,7 +117,7 @@ test('empty history and database failure are explicit with retry', async ({ page
     failing ? route.fulfill({ status: 503, body: 'Unavailable' }) : route.fallback(),
   );
   await page.goto('/activity');
-  await expect(page.getByRole('alert')).toContainText('Kiểm tra backend');
+  await expect(page.getByRole('alert')).toContainText('Dịch vụ dữ liệu tạm thời chưa sẵn sàng');
   await expect(page.getByRole('heading', { name: 'Chưa có hoạt động phù hợp' })).toHaveCount(0);
   failing = false;
   await page.getByRole('button', { name: 'Thử lại' }).click();

@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.restore
+.env.e2e
 
 # Database backups and isolated recovery output (contain sensitive data)
 backups/
@@ -16,6 +17,7 @@ venv/
 .pytest_cache/
 .ruff_cache/
 backend/data/
+backend/e2e-runs/
 
 # IDE
 .vscode/

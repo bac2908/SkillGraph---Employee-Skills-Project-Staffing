@@ -41,7 +41,7 @@ test('viewer cannot see write controls or account administration', async ({ page
   await mockApi(page, { role: 'VIEWER' });
   await page.goto('/');
   await expect(page.locator('.coverage-number')).toHaveText('80%');
-  await expect(page.getByRole('button', { name: 'Xem & phân công' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Kiểm tra phân bổ' })).toHaveCount(0);
   await expect(
     page.getByRole('navigation').getByRole('link', { name: 'Tài khoản', exact: true }),
   ).toHaveCount(0);
@@ -128,6 +128,7 @@ test('expired session clears workspace and requests login', async ({ page }) => 
   await page.getByRole('button', { name: 'Làm mới dữ liệu' }).click();
   await expect(page.getByRole('heading', { name: 'Đăng nhập không gian của bạn' })).toBeVisible();
   await expect(page.locator('tbody tr')).toHaveCount(0);
+  await expect(page.getByRole('status')).toContainText('hết hạn hoặc bị thu hồi');
 });
 
 test('mobile login and account page fit viewport', async ({ page }, info) => {

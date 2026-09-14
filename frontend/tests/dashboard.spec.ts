@@ -193,7 +193,7 @@ test('saving a staffing change refreshes the overview without changing focus', a
     if (new URL(response.url()).pathname === '/api/dashboard' && response.ok()) count++;
   });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Xem & phân công' }).first().click();
+  await page.getByRole('button', { name: 'Kiểm tra phân bổ' }).first().click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.locator('.capacity-note strong')).toHaveText('20%');
   await dialog.getByLabel('Phân bổ (%)').fill('20');

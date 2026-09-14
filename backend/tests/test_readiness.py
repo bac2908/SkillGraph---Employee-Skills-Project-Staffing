@@ -141,20 +141,31 @@ def test_graph_status_timeout_and_cleanup(monkeypatch, tmp_path, mode, expected)
 def test_single_flight_cache_and_expiry(monkeypatch):
     driver = Driver()
     monkeypatch.setattr(readiness, "probe_auth", lambda path: "ok")
+    # Control only the cache clock, not asyncio's real timeout/scheduling clock.
+    # A wall-clock TTL of 10 ms can expire while concurrent waiters are scheduled.
+    cache_clock = [100.0]
+    monkeypatch.setattr(readiness, "monotonic", lambda: cache_clock[0])
 
     async def run():
-        checker = readiness.ReadinessChecker(driver=driver, cache_seconds=0.01)
-        results = await asyncio.gather(*(checker.check() for _ in range(20)))
-        assert all(item == {"graph": "ok", "auth": "ok"} for item in results)
-        assert len(driver.value.calls) == 2
-        results[0]["graph"] = "forged"
-        assert (await checker.check())["graph"] == "ok"
-        await asyncio.sleep(0.02)
-        await checker.check()
-        assert len(driver.value.calls) == 4
-        await checker.close()
+        checker = readiness.ReadinessChecker(driver=driver, cache_seconds=5)
+        try:
+            results = await asyncio.gather(*(checker.check() for _ in range(20)))
+            assert all(item == {"graph": "ok", "auth": "ok"} for item in results)
+            assert len(driver.value.calls) == 2
+            results[0]["graph"] = "forged"
+            cache_clock[0] = 104.0
+            assert (await checker.check())["graph"] == "ok"
+            assert len(driver.value.calls) == 2
+            cache_clock[0] = 105.0  # Re-probe exactly at the expiry boundary.
+            assert (await checker.check())["graph"] == "ok"
+            assert len(driver.value.calls) == 4
+            assert (await checker.check())["graph"] == "ok"
+            assert len(driver.value.calls) == 4
+        finally:
+            await checker.close()
 
     asyncio.run(run())
+    driver.close.assert_awaited_once()
 
 
 @pytest.mark.parametrize(

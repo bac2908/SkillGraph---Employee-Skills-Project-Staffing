@@ -34,7 +34,8 @@ export function AssignmentDialog({
   const capacity = useCapacity();
   const write = useWrite();
   const assignments = useResource<Items<Assignment>>(`/api/projects/${projectId}/assignments`);
-  const selectedId = existing?.employee_id || employeeId;
+  const [chosenId, setChosenId] = useState(existing?.employee_id || employeeId || '');
+  const selectedId = existing?.employee_id || employeeId || chosenId;
   const currentAssignment =
     existing || assignments.data?.items.find((a) => a.employee_id === selectedId);
   const total = selectedId ? capacity.totals.get(selectedId) || 0 : null;
@@ -42,7 +43,8 @@ export function AssignmentDialog({
     total === null ? null : Math.max(0, 100 - total + (currentAssignment?.allocation || 0));
   const error = employees.error || capacity.error || assignments.error;
   // Keep form mounted only after capacity and selector data are available.
-  if (employees.isPending || capacity.isPending || assignments.isPending || error)
+  const dataReady = !!employees.data && !!assignments.data && capacity.hasData;
+  if (!dataReady)
     return (
       <FormDialog
         title="Phân công nhân viên"
@@ -69,7 +71,7 @@ export function AssignmentDialog({
       name: 'employee_id',
       label: 'Nhân viên',
       type: 'select',
-      disabled: !!selectedId,
+      disabled: !!existing || !!employeeId,
       options: (employees.data || [])
         .filter(
           (e) =>
@@ -96,7 +98,10 @@ export function AssignmentDialog({
     <FormDialog
       title={currentAssignment ? 'Điều chỉnh phân công' : 'Phân công nhân viên'}
       fields={fields}
-      submitDisabled={remaining === 0}
+      submitDisabled={remaining === 0 || !!error}
+      onFieldChange={(field, value) => {
+        if (field === 'employee_id') setChosenId(value);
+      }}
       initial={{
         employee_id: selectedId || '',
         role:
@@ -128,12 +133,31 @@ export function AssignmentDialog({
         );
       }}
     >
+      {error && (
+        <ErrorNotice
+          error={error}
+          retry={() => {
+            void employees.refetch();
+            void assignments.refetch();
+            capacity.retry();
+          }}
+        />
+      )}
       {remaining !== null && (
         <div className="capacity-note">
           <strong>{remaining}%</strong>
-          <span>Dung lượng có thể phân bổ cho dự án này</span>
+          <span>
+            {currentAssignment
+              ? 'Giới hạn cho dự án này, đã tính phần đang phân bổ tại đây'
+              : 'Dung lượng có thể phân bổ cho dự án này'}
+          </span>
         </div>
       )}
+      <p className="workflow-note">
+        {remaining === 0
+          ? 'Nhân viên đã được phân bổ đủ 100%. Cần điều chỉnh phân công ở dự án khác trước khi thêm việc.'
+          : 'Số liệu có thể thay đổi khi người khác phân công. Hệ thống kiểm tra lại tổng allocation khi bạn lưu.'}
+      </p>
     </FormDialog>
   );
 }
@@ -405,7 +429,7 @@ export function SkillRelations({
         <FormDialog
           title={isEmployee ? 'Cập nhật kỹ năng nhân viên' : 'Cập nhật yêu cầu kỹ năng'}
           submitDisabled={skills.isPending || skills.isError || !skills.data?.length}
-          fields={skills.isPending || skills.isError ? [] : fields}
+          fields={skills.data ? fields : []}
           initial={
             edit === 'new'
               ? { level: 3, min_level: 3, years_experience: 1, priority: 'MUST' }

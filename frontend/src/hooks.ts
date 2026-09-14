@@ -17,6 +17,7 @@ export function useCapacity() {
       totals.set(item.employee_id, (totals.get(item.employee_id) || 0) + item.allocation);
   return {
     totals,
+    hasData: !!projects.data && assignments.every((q) => q.data !== undefined),
     isPending: projects.isPending || assignments.some((q) => q.isPending),
     error: projects.error || assignments.find((q) => q.error)?.error,
     retry: () => {

@@ -5,6 +5,7 @@ import { useResource } from '../api';
 import type { Candidate, Employee, Project } from '../types';
 import {
   Avatar,
+  AvailabilityNote,
   BackLink,
   Badge,
   ErrorNotice,
@@ -60,9 +61,10 @@ export function EmployeeDetail() {
             ? 'Đang tính phân bổ…'
             : capacity.error
               ? 'Chưa tải được phân bổ'
-              : `${capacity.totals.get(employee.employee_id) || 0}% đã phân bổ`}
+              : `${capacity.totals.get(employee.employee_id) || 0}% đã phân bổ · còn ${Math.max(0, 100 - (capacity.totals.get(employee.employee_id) || 0))}%`}
         </span>
       </div>
+      <AvailabilityNote />
       {capacity.error && <ErrorNotice error={capacity.error} retry={capacity.retry} />}
       <SkillRelations ownerId={employee.employee_id} kind="employee" />
     </>

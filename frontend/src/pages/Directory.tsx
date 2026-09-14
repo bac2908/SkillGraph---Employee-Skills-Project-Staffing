@@ -7,6 +7,7 @@ import type { Page } from '../types';
 import { useAuth } from '../auth';
 import {
   AddButton,
+  AvailabilityNote,
   Avatar,
   Badge,
   Empty,
@@ -51,6 +52,7 @@ export function Directory({ resource }: { resource: Resource }) {
           isAdmin && <AddButton onClick={() => setEdit('new')}>Thêm {config.singular}</AddButton>
         }
       />
+      {resource === 'employees' && <AvailabilityNote />}
       <section className="panel directory-panel">
         <div className="toolbar">
           <label className="search-field">

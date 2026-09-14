@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Network, ShieldCheck } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, roleLabel } from '../auth';
@@ -47,6 +47,7 @@ export function LoginPage() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [visible, setVisible] = useState(false);
+  const submitting = useRef(false);
   return (
     <AuthLayout>
       <span className="auth-emblem">
@@ -56,8 +57,8 @@ export function LoginPage() {
       <h2>Đăng nhập không gian của bạn</h2>
       <p className="auth-intro">Tiếp tục kết nối năng lực và xây dựng đội ngũ.</p>
       {(auth.notice || location.state?.passwordChanged) && (
-        <p className="auth-success" role="status">
-          {auth.notice ||
+        <p className={auth.notice?.tone === 'info' ? 'auth-notice' : 'auth-success'} role="status">
+          {auth.notice?.message ||
             'Đã đổi mật khẩu và đăng xuất các phiên cũ. Hãy đăng nhập bằng mật khẩu mới.'}
         </p>
       )}
@@ -65,9 +66,10 @@ export function LoginPage() {
         className="auth-form"
         onSubmit={async (event) => {
           event.preventDefault();
-          if (pending) return;
+          if (submitting.current) return;
           const form = event.currentTarget;
           const data = new FormData(form);
+          submitting.current = true;
           setPending(true);
           setError(null);
           try {
@@ -75,6 +77,7 @@ export function LoginPage() {
             form.reset();
           } catch (err) {
             setError(err);
+            submitting.current = false;
             setPending(false);
           }
         }}
@@ -116,11 +119,11 @@ export function LoginPage() {
             <ArrowRight size={18} />
           </button>
         </fieldset>
-        {error != null && <ErrorNotice error={error} />}
+        {error != null && <ErrorNotice error={error} focus />}
       </form>
       <p className="auth-help">
-        Chưa có tài khoản hoặc quên mật khẩu? Liên hệ Admin của bạn. Không gian mới cần tạo Admin
-        bằng lệnh <code>python -m scripts.create_admin</code> trong backend.
+        Tài khoản được cấp bởi quản trị viên của tổ chức. Nếu chưa có tài khoản hoặc quên mật khẩu,
+        hãy liên hệ quản trị viên để được hỗ trợ.
       </p>
     </AuthLayout>
   );
@@ -145,17 +148,19 @@ export function PasswordForm() {
   const navigate = useNavigate();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const submitting = useRef(false);
   return (
     <form
       className="auth-form"
       onSubmit={async (event) => {
         event.preventDefault();
-        if (pending) return;
+        if (submitting.current) return;
         const data = new FormData(event.currentTarget);
         if (data.get('new_password') !== data.get('confirm_password')) {
           setError(new Error('Hai lần nhập mật khẩu mới chưa khớp.'));
           return;
         }
+        submitting.current = true;
         setPending(true);
         setError(null);
         try {
@@ -165,11 +170,13 @@ export function PasswordForm() {
           });
           auth.forget(
             'Đã đổi mật khẩu và đăng xuất các phiên cũ. Hãy đăng nhập bằng mật khẩu mới.',
+            'success',
           );
           auth.notifyTabs();
           navigate('/login', { replace: true, state: { passwordChanged: true } });
         } catch (err) {
           setError(err);
+          submitting.current = false;
           setPending(false);
         }
       }}
@@ -213,7 +220,7 @@ export function PasswordForm() {
           {pending ? 'Đang cập nhật…' : 'Đổi mật khẩu & đăng xuất'}
         </button>
       </fieldset>
-      {error != null && <ErrorNotice error={error} />}
+      {error != null && <ErrorNotice error={error} focus />}
     </form>
   );
 }

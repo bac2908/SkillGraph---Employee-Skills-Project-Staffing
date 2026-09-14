@@ -52,6 +52,15 @@ export function Badge({ value }: { value: string }) {
     </span>
   );
 }
+export function AvailabilityNote() {
+  return (
+    <p className="workflow-note">
+      “Sẵn sàng” là trạng thái do người quản lý cập nhật, không đồng nghĩa còn dung lượng nhận việc.
+      Phân bổ còn lại = 100% − tổng allocation trên tất cả dự án. Trạng thái không tự đổi khi phân
+      công.
+    </p>
+  );
+}
 export function Meter({ value, label: text }: { value: number; label?: string }) {
   return (
     <div
@@ -95,9 +104,21 @@ export function Loading() {
     </div>
   );
 }
-export function ErrorNotice({ error, retry }: { error: unknown; retry?: () => void }) {
+export function ErrorNotice({
+  error,
+  retry,
+  focus = false,
+}: {
+  error: unknown;
+  retry?: () => void;
+  focus?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (focus) ref.current?.focus();
+  }, [error, focus]);
   return (
-    <div className="error-notice" role="alert">
+    <div ref={ref} className="error-notice" role="alert" tabIndex={focus ? -1 : undefined}>
       <AlertCircle size={20} />
       <div>
         <strong>Chưa thực hiện được yêu cầu</strong>
@@ -237,6 +258,7 @@ export function FormDialog({
   submitDisabled = false,
   onSubmit,
   onClose,
+  onFieldChange,
   children,
 }: {
   title: string;
@@ -248,12 +270,14 @@ export function FormDialog({
   submitDisabled?: boolean;
   onSubmit: (values: Record<string, unknown>) => Promise<void>;
   onClose: () => void;
+  onFieldChange?: (name: string, value: string) => void;
   children?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const headingId = useId();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const submitting = useRef(false);
   useEffect(() => {
     const dialog = ref.current!;
     dialog.showModal();
@@ -266,13 +290,13 @@ export function FormDialog({
       aria-labelledby={headingId}
       onCancel={(event) => {
         event.preventDefault();
-        if (!pending) onClose();
+        if (!submitting.current) onClose();
       }}
     >
       <form
         onSubmit={async (event) => {
           event.preventDefault();
-          if (pending || submitDisabled) return;
+          if (submitting.current || submitDisabled) return;
           const form = new FormData(event.currentTarget);
           const values = Object.fromEntries(
             fields
@@ -286,6 +310,7 @@ export function FormDialog({
                     : String(form.get(f.name) ?? '').trim(),
               ]),
           );
+          submitting.current = true;
           setPending(true);
           setError(null);
           try {
@@ -293,6 +318,7 @@ export function FormDialog({
             onClose();
           } catch (err) {
             setError(err);
+            submitting.current = false;
             setPending(false);
           }
         }}
@@ -331,6 +357,7 @@ export function FormDialog({
                   required={f.required !== false}
                   disabled={f.disabled}
                   defaultValue={String(initial[f.name] ?? '')}
+                  onChange={(event) => onFieldChange?.(f.name, event.target.value)}
                 >
                   <option value="" disabled>
                     Chọn {f.label.toLowerCase()}
@@ -369,7 +396,7 @@ export function FormDialog({
             </label>
           ))}
         </fieldset>
-        {error != null && <ErrorNotice error={error} />}
+        {error != null && <ErrorNotice error={error} focus />}
         <div className="dialog-footer">
           <button type="button" className="button secondary" disabled={pending} onClick={onClose}>
             Hủy

@@ -11,6 +11,17 @@ thu hồi phiên và buộc đổi mật khẩu tạm. Kiểm thử bằng DB t�
 mật khẩu Admin thật. Phần này không bổ sung audit tài khoản/quyền hoặc triển
 khai các hạng mục vận hành còn lại.
 
+Ngày 14/09/2026 hoàn tất [nghiệm thu ba role qua UI và API](rbac-acceptance.md):
+9/9 trường hợp yêu cầu đạt qua 10 test trình duyệt, dùng FastAPI/SQLite thật
+trong test và graph mô phỏng. Không xây lại quyền hoặc sửa tài khoản thật.
+Đây chưa phải nghiệm thu toàn stack với CognoDB thật; mục thử phục hồi thật
+vẫn theo trạng thái riêng trong [tài liệu backup/restore](backup-restore.md).
+
+Bước 4: đã chuẩn bị [bộ nghiệm thu FE → BE → graph thật](graph-e2e-acceptance.md)
+gồm 13 bước và runner chặn nhầm nguồn/cleanup theo namespace. **Chưa nghiệm thu
+thật**: cần điền `.env.e2e`, xác nhận instance trống riêng và khoảng dùng độc
+quyền trước khi tạo schema/dữ liệu. Unit test công cụ không thay kết quả này.
+
 ## Thứ tự ưu tiên đề xuất
 
 | Thứ tự | Hạng mục | Lý do | Điều kiện nghiệm thu |

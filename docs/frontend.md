@@ -66,6 +66,11 @@ production trước khi mở Internet. Xem [các giới hạn triển khai](auth
 
 ## Kiểm tra
 
+Để kiểm thử ghi **FE → BE → graph thật**, dùng runner có chốt an toàn trong
+[hướng dẫn graph E2E](graph-e2e-acceptance.md), không dùng `test:live` chỉ đọc
+hoặc `test:rbac` graph mô phỏng thay thế. Bộ mới đã được chuẩn bị nhưng chưa
+chạy trên instance test thật; không tự nằm trong `npm test` bên dưới.
+
 ```powershell
 cd frontend
 npm.cmd run typecheck
@@ -73,6 +78,7 @@ npm.cmd run format:check
 npm.cmd run build
 npm.cmd test
 npm.cmd run test:auth-stack
+npm.cmd run test:rbac
 npm.cmd run test:live
 ```
 
@@ -82,6 +88,10 @@ npm.cmd run test:live
   kiểm tra này không thay thế đánh giá khả năng truy cập thủ công toàn bộ ứng dụng.
 - `format`: định dạng mã nguồn bằng Prettier; `format:check`: kiểm tra định dạng.
 - `test:auth-stack`: FE và FastAPI thật, SQLite tạm; graph được stub, không kết nối CognoDB.
+- `test:rbac`: nghiệm thu cả ba role qua UI và API trực tiếp; FastAPI/SQLite thật
+  trong test, graph mô phỏng. Kiểm tra quyền ngoài dự án, Viewer ghi trái phép,
+  thu hồi phiên và buộc đổi mật khẩu. Chạy lần lượt với `test:auth-stack` vì cùng
+  dùng cổng 5174/18000. Xem [kết quả và giới hạn nghiệm thu](rbac-acceptance.md).
 - `test:live`: backend phải đang chạy ở cổng 8000, có dữ liệu và tài khoản hiện hữu.
   Cấp `SKILLGRAPH_TEST_EMAIL`/`SKILLGRAPH_TEST_PASSWORD` bằng environment variables.
   Thiếu tài khoản thì skip. Login/logout ghi phiên; các API nghiệp vụ chỉ được đọc.

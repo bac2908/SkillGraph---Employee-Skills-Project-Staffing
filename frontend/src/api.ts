@@ -15,7 +15,28 @@ export class ApiError extends Error {
   }
 }
 
+function readableDetail(detail: string): string {
+  const linked =
+    /^(Employee|Skill|Project) '[^']+' is connected by (\d+) relationship\(s\) and cannot be deleted\.$/.exec(
+      detail,
+    );
+  if (linked)
+    return `Bản ghi còn ${linked[2]} liên kết với dữ liệu khác. Hãy gỡ liên kết trước khi xóa.`;
+  const allocation =
+    /^Employee 'EMP\d+' would reach (\d+)% total allocation: (\d+)% outside Project 'PROJ\d+' plus (\d+)% requested\. The maximum is 100%\.$/.exec(
+      detail,
+    );
+  if (allocation)
+    return `Tổng phân bổ sẽ là ${allocation[1]}% (${allocation[2]}% ở dự án khác + ${allocation[3]}% yêu cầu). Giới hạn là 100%. Hãy giảm tỷ lệ hoặc điều chỉnh phân công khác.`;
+  return detail;
+}
+
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const isWrite = !['GET', 'HEAD', 'OPTIONS'].includes(init.method || 'GET');
+  const uncertainWrite =
+    isWrite && !['/api/auth/login', '/api/auth/logout', '/api/auth/password'].includes(path)
+      ? ' Chưa xác nhận được kết quả ghi. Hãy kiểm tra dữ liệu trước khi gửi lại để tránh thao tác trùng.'
+      : '';
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
   const abort = () => controller.abort();
@@ -41,18 +62,22 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
       const data = await response.json().catch(() => null);
       const detail = data?.detail;
       const message =
-        response.status >= 500
-          ? 'Chưa kết nối được dữ liệu. Kiểm tra backend và thử lại.'
-          : Array.isArray(detail)
-            ? detail
-                .map(
-                  (issue: { loc?: string[]; msg: string }) =>
-                    `${issue.loc?.slice(1).join('.') || 'Dữ liệu'}: ${issue.msg}`,
-                )
-                .join(' · ')
-            : typeof detail === 'string'
+        response.status === 503
+          ? 'Dịch vụ dữ liệu tạm thời chưa sẵn sàng. Vui lòng thử lại sau hoặc liên hệ quản trị viên.' +
+            uncertainWrite
+          : response.status >= 500
+            ? 'Hệ thống gặp lỗi khi xử lý yêu cầu. Vui lòng thử lại sau hoặc liên hệ quản trị viên.' +
+              uncertainWrite
+            : Array.isArray(detail)
               ? detail
-              : `Yêu cầu không thành công (${response.status}).`;
+                  .map(
+                    (issue: { loc?: string[]; msg: string }) =>
+                      `${issue.loc?.slice(1).join('.') || 'Dữ liệu'}: ${issue.msg}`,
+                  )
+                  .join(' · ')
+              : typeof detail === 'string'
+                ? readableDetail(detail)
+                : `Yêu cầu không thành công (${response.status}).`;
       throw new ApiError(response.status, message);
     }
     return response.status === 204 ? (undefined as T) : await response.json();
@@ -61,8 +86,9 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     if (init.signal?.aborted) throw error;
     throw new Error(
       controller.signal.aborted
-        ? 'Yêu cầu quá thời gian chờ. Vui lòng thử lại.'
-        : 'Không thể kết nối máy chủ. Vui lòng kiểm tra backend.',
+        ? 'Yêu cầu quá thời gian chờ. Vui lòng kiểm tra kết nối.' + uncertainWrite
+        : 'Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối mạng hoặc liên hệ quản trị viên.' +
+            uncertainWrite,
     );
   } finally {
     clearTimeout(timeout);

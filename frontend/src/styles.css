@@ -2703,13 +2703,16 @@ main.auth-main {
   color: #334155;
 }
 
-.auth-help code {
-  font-size: 11px;
-  overflow-wrap: anywhere;
+.auth-notice,
+.workflow-note {
+  color: #334155;
   background: #f1f5f9;
-  padding: 2px 6px;
-  border-radius: 4px;
-  color: #0f172a;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .auth-footer {

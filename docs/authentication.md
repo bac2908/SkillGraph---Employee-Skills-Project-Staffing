@@ -140,11 +140,21 @@ npm.cmd test
 
 # frontend + FastAPI auth thật; SQLite tạm, graph được stub, không dùng DB của bạn
 npm.cmd run test:auth-stack
+
+# frontend + FastAPI: ma trận đủ ba role, dữ liệu tổng hợp, không dùng graph thật
+npm.cmd run test:rbac
 ```
 
 `test:auth-stack` dùng cổng 5174 và 18000, tạo tài khoản **chỉ trong database
 tạm của bài test**. Các mật khẩu mẫu trong test không phải tài khoản ứng dụng.
 Không dùng `tests.auth_browser_server` làm server chạy dự án.
+
+`test:rbac` dùng cùng hai cổng test; chạy lần lượt với `test:auth-stack`, không
+chạy đồng thời. Kết quả 14/09/2026: 10 test trình duyệt đạt, bao phủ 9 trường
+hợp nghiệm thu, có API ghi trực tiếp và thu hồi phiên. Xem
+[báo cáo nghiệm thu ba role](rbac-acceptance.md) để phân biệt phần đã kiểm chứng
+với các giới hạn: auth/SQLite thật trong test, graph mô phỏng, chưa phải E2E
+với CognoDB thật hoặc production.
 
 `npm.cmd run test:live` cần backend thật, dữ liệu có sẵn và tài khoản đã đổi mật
 khẩu. Cấp email/mật khẩu qua `SKILLGRAPH_TEST_EMAIL` và

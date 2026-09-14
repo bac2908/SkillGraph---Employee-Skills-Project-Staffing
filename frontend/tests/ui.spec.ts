@@ -23,7 +23,7 @@ test('dashboard displays API metrics, switches project and opens staffing dialog
   await expect(page.getByRole('heading', { name: 'Đội ngũ đã đáp ứng kỹ năng' })).toBeVisible();
   await page.getByRole('button', { name: 'Chọn dự án phân tích' }).click();
   await page.getByRole('button', { name: 'Chọn E-commerce Platform' }).click();
-  await page.getByRole('button', { name: 'Xem & phân công' }).first().click();
+  await page.getByRole('button', { name: 'Kiểm tra phân bổ' }).first().click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.locator('.capacity-note strong')).toHaveText('20%');
   await dialog.getByLabel('Phân bổ (%)').fill('20');
@@ -176,7 +176,9 @@ test('backend failure is explicit, without fabricated dashboard data', async ({ 
       : route.fulfill({ status: 503, body: 'Unavailable' }),
   );
   await page.goto('/');
-  await expect(page.getByRole('alert').first()).toContainText('Kiểm tra backend');
+  await expect(page.getByRole('alert').first()).toContainText(
+    'Dịch vụ dữ liệu tạm thời chưa sẵn sàng',
+  );
   await expect(page.locator('.stat-card').first().locator('strong')).toHaveText('—');
   await expect(page.getByRole('button', { name: 'Thử lại' }).first()).toBeVisible();
 });
