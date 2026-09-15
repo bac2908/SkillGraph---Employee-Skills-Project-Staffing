@@ -31,6 +31,11 @@ kiểm thử cô lập của bước này để đóng bước 2 hoặc bước 
 
 ## Thứ tự ưu tiên đề xuất
 
+Bước 6 ngày 16/09/2026: chuẩn bị [bộ bàn giao local](handoff.md), thử cài đặt
+riêng, kiểm tra nguồn bàn giao và [báo cáo kết quả](release-verification.md).
+Không gắn tag/push, không chuyển sang production. Người nhận vẫn phải hoàn
+tất các mục graph thật/restore thật và điều kiện vận hành trước khi dùng thật.
+
 | Thứ tự | Hạng mục | Lý do | Điều kiện nghiệm thu |
 | --- | --- | --- | --- |
 | 1 — đã làm | Dashboard tổng hợp | Loại tải cả danh mục và request theo từng dự án khi mở tổng quan | Tổng chính xác, response có giới hạn, lỗi rõ ràng, test BE/FE |

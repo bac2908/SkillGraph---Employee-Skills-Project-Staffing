@@ -11,6 +11,10 @@ tính năng. Quy ước này được lưu ở [AGENTS.md](../AGENTS.md).
 | Tài liệu | Nội dung |
 | --- | --- |
 | [Tổng quan dự án — đọc trước](tong-quan-du-an.md) | Mục đích, giá trị doanh nghiệp, role, quy trình, kiến trúc, trạng thái và tiêu chí hoàn thành |
+| [Bàn giao bản local — bước 6](handoff.md) | Cài mới, khởi động, schema/Admin, nguồn ZIP/manifest và checklist người nhận |
+| [Báo cáo kiểm chứng phiên bản](release-verification.md) | Ngày/môi trường/kết quả thực chạy, cài riêng và phạm vi chưa kiểm tra |
+| [Kịch bản demo tổng hợp](demo-scenario.md) | Bộ dữ liệu nhập qua UI, coverage, allocation, quyền, audit và dọn đúng phạm vi |
+| [Xử lý lỗi thường gặp](troubleshooting.md) | Server/cổng, dependency, đăng nhập/CSRF, readiness, ghi dữ liệu và phục hồi |
 | [Giao diện](frontend.md) | Chạy FE, chức năng, cấu hình API và kiểm thử trình duyệt |
 | [Rà soát thông báo và thao tác giao diện — bước 5](usability-review.md) | Giữ bản nháp khi lỗi, phiên/kết nối, chặn gửi lặp, focus, mobile và giải thích allocation/gợi ý |
 | [Nâng cấp giao diện UI/UX](ui-redesign.md) | Thiết kế mới Emerald Glassmorphic, typography, màu sắc và E2E |

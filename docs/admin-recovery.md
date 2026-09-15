@@ -6,6 +6,10 @@ và ghi kho tài khoản của SkillGraph. Đây là công cụ dự phòng khi 
 
 ## Mục đích và khi nào sử dụng
 
+Người mới nhận dự án đọc [hướng dẫn bàn giao](handoff.md) và
+[chẩn đoán lỗi đăng nhập](troubleshooting.md#đăng-nhập-và-quyền) trước.
+Khôi phục mật khẩu không chữa được FE chưa chạy, lỗi proxy hoặc graph mất kết nối.
+
 - Còn nhớ mật khẩu và đăng nhập được: dùng trang **Tài khoản cá nhân** nếu
   muốn đổi mật khẩu; không cần chạy công cụ khôi phục.
 - Quên mật khẩu nhưng còn Admin khác truy cập được: ưu tiên nhờ Admin đó đặt

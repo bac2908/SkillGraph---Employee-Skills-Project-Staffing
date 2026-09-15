@@ -1,11 +1,16 @@
 # SkillGraph - Employee Skills & Project Staffing
 
-SkillGraph is a FastAPI and Neo4j application for analyzing a project's skill
-coverage and recommending available employees for uncovered skills.
+SkillGraph is a FastAPI/React application backed by CognoDB (Bolt/Neo4j driver)
+for skill coverage analysis and rule-based staffing recommendations. A suggested
+employee is not guaranteed to have remaining allocation.
 
 New to the project? Start with the Vietnamese [project overview](docs/tong-quan-du-an.md)
 for its purpose, business value, user roles, workflow, architecture, current scope
 and proposed completion criteria.
+
+**Receiving this project?** Follow the Vietnamese [handoff guide](docs/handoff.md)
+for a clean installation, schema/account bootstrap, demo, verification, recovery
+and known limitations. This is a local handoff candidate, not a production release.
 
 ## Frontend dashboard
 
@@ -69,23 +74,26 @@ never point it at the working graph or reuse real account credentials.
 ```powershell
 cd backend
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install --no-cache-dir -r requirements.txt -c constraints-windows-py312.txt
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 ```
 
 Set `COGNODB_URI`, `COGNODB_USER`, and `COGNODB_PASSWORD` in `backend/.env`.
 The `.env` file is ignored by Git and must not be committed.
 
-Initialize the graph and start the API:
+For a new, dedicated graph only, initialize schema (includes activity indexes).
+Review the [migration procedure](docs/handoff.md) before changing an existing DB:
 
 ```powershell
-python -m scripts.setup_schema
-python -m scripts.seed
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-proxy-headers --reload
+.\.venv\Scripts\python.exe -m scripts.setup_schema
+.\.venv\Scripts\python.exe -m scripts.create_admin
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-proxy-headers --reload
 ```
 
 Open Swagger UI at <http://127.0.0.1:8000/docs>.
+Seeding is optional and writes fixed IDs/properties. Never run `scripts.seed`
+on existing working data as an installation or recovery step. Use the
+[synthetic demo scenario](docs/demo-scenario.md) on a dedicated environment.
 Business requests require the session cookie; writes also require the allowed
 Origin and X-CSRF-Token from `/api/auth/me`. The frontend handles these automatically.
 
@@ -149,12 +157,13 @@ python test_skill_gap.py
 python test_candidate_recommendation.py
 ```
 
-Install the development dependencies and run the full CRUD integration test:
+Install development dependencies and run safe isolated tests:
 
 ```powershell
-pip install -r requirements-dev.txt
-pytest -m "not integration" -q
-pytest -m integration -q
-ruff check app tests scripts
+.\.venv\Scripts\python.exe -m pip install --no-cache-dir -r requirements-dev.txt -c constraints-windows-py312.txt
+.\.venv\Scripts\python.exe -B -m pytest -m "not integration" -q
+.\.venv\Scripts\python.exe -m ruff check app tests scripts
 ```
-090 450 6600
+The three diagnostic scripts above connect to the configured graph. Integration
+tests can write graph data; they are not part of the default handoff validation.
+Use a dedicated test instance and the guarded [graph E2E procedure](docs/graph-e2e-acceptance.md).

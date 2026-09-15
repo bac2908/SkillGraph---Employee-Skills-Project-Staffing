@@ -7,6 +7,12 @@ backup, không bổ sung audit tài khoản/quyền.
 
 ## Hai kho dữ liệu cần đi cùng nhau
 
+Khi nhận mã nguồn, dùng [bộ bàn giao source](handoff.md) riêng với dữ liệu.
+ZIP bàn giao không chứa DB/backup và không thay bộ phục hồi. Xem
+[xử lý lỗi backup/restore](troubleshooting.md#sao-lưuphục-hồi-lỗi-hoặc-dung-lượng-tăng)
+và [báo cáo phiên bản](release-verification.md) để tránh hiểu nhầm test cô lập
+là drill graph thật đã đạt.
+
 | Kho | Nội dung | File trong bộ backup |
 | --- | --- | --- |
 | CognoDB graph | Employee, Skill, Project, Team, AuditEvent và các quan hệ của ứng dụng | `graph.json` |

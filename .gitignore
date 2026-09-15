@@ -3,6 +3,12 @@
 .env.local
 .env.restore
 .env.e2e
+.env.*
+!.env.example
+!.env.*.example
+
+# Local handoff archives/manifests (source only, regenerate when needed)
+.handoff/
 
 # Database backups and isolated recovery output (contain sensitive data)
 backups/
@@ -18,6 +24,13 @@ venv/
 .ruff_cache/
 backend/data/
 backend/e2e-runs/
+*.sqlite
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+*.db-wal
+*.db-shm
 
 # IDE
 .vscode/
