@@ -12,6 +12,7 @@ tính năng. Quy ước này được lưu ở [AGENTS.md](../AGENTS.md).
 | --- | --- |
 | [Tổng quan dự án — đọc trước](tong-quan-du-an.md) | Mục đích, giá trị doanh nghiệp, role, quy trình, kiến trúc, trạng thái và tiêu chí hoàn thành |
 | [Giao diện](frontend.md) | Chạy FE, chức năng, cấu hình API và kiểm thử trình duyệt |
+| [Rà soát thông báo và thao tác giao diện — bước 5](usability-review.md) | Giữ bản nháp khi lỗi, phiên/kết nối, chặn gửi lặp, focus, mobile và giải thích allocation/gợi ý |
 | [Nâng cấp giao diện UI/UX](ui-redesign.md) | Thiết kế mới Emerald Glassmorphic, typography, màu sắc và E2E |
 | [Đăng nhập và phân quyền](authentication.md) | Admin/Manager/Viewer, session, CSRF, SQLite và giới hạn triển khai |
 | [Nghiệm thu ba role](rbac-acceptance.md) | Kết quả UI + API Admin/Manager/Viewer, thu hồi phiên, buộc đổi mật khẩu; phạm vi cô lập và giới hạn graph thật |

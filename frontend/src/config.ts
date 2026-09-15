@@ -50,7 +50,7 @@ export const configs: Record<
         label: 'Trạng thái',
         type: 'select',
         options: options(employeeStatuses),
-        hint: 'Trạng thái do người quản lý cập nhật; không phản ánh allocation còn lại.',
+        hint: 'Trạng thái do quản trị viên cập nhật; không phản ánh allocation còn lại.',
       },
       { name: 'location', label: 'Địa điểm', maxLength: 100 },
     ],

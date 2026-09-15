@@ -47,6 +47,13 @@ khi phân công: trạng thái `AVAILABLE` và allocation là hai thuộc tính 
 khác nhau theo API hiện tại. Candidate Recommendation gợi ý theo kỹ năng và lịch
 sử cộng tác; vẫn phải kiểm tra dung lượng khi thực hiện phân công.
 
+Đợt [rà soát giao diện bước 5](usability-review.md) bổ sung lời giải thích ngay
+trên màn hình, phân biệt hết phiên với lỗi kết nối, giữ ô nhập khi lưu thất
+bại, chặn submit liên tiếp và trả focus khi đóng hộp thoại. Trang đăng nhập
+chỉ hướng dẫn liên hệ quản trị viên; CLI tạo Admin nằm trong tài liệu vận hành.
+Lỗi mạng/timeout khi ghi chưa chứng minh server chưa lưu: kiểm tra dữ liệu
+trước khi gửi lại. Đây không phải tính năng tự lưu bản nháp qua tải lại trang.
+
 ## API và cấu hình
 
 Frontend gửi yêu cầu đến `/api/...`. Vite chuyển tiếp `/api` và `/health` đến
@@ -86,6 +93,8 @@ npm.cmd run test:live
   quan hệ, allocation conflict, bàn phím, mobile và lỗi kết nối. Không ghi CognoDB.
   Bao gồm kiểm tra tự động bằng axe cho dashboard, biểu mẫu và bảng phân công;
   kiểm tra này không thay thế đánh giá khả năng truy cập thủ công toàn bộ ứng dụng.
+  Bao gồm `usability.spec.ts` cho lỗi đăng nhập/lưu, submit liên tiếp, dữ liệu
+  phụ thuộc lỗi, bàn phím và màn hình nhỏ. Xem [kết quả bước 5](usability-review.md#kiểm-chứng).
 - `format`: định dạng mã nguồn bằng Prettier; `format:check`: kiểm tra định dạng.
 - `test:auth-stack`: FE và FastAPI thật, SQLite tạm; graph được stub, không kết nối CognoDB.
 - `test:rbac`: nghiệm thu cả ba role qua UI và API trực tiếp; FastAPI/SQLite thật

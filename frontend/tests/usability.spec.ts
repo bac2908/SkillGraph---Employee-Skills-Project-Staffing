@@ -154,6 +154,7 @@ for (const failure of ['conflict', 'validation', 'unavailable', 'network'] as co
     fail = false;
     await dialog.getByRole('button', { name: 'Lưu thay đổi' }).click();
     await expect(dialog).not.toBeVisible();
+    await page.getByRole('textbox', { name: 'Tìm kỹ năng', exact: true }).fill('SK990');
     await expect(page.getByRole('row').filter({ hasText: 'Draft usability skill' })).toHaveCount(1);
     expect(count).toBe(2);
   });
@@ -218,6 +219,7 @@ test('rapid saves submit once; pending fields, close and Escape stay locked', as
     release();
   }
   await expect(dialog).not.toBeVisible();
+  await page.getByRole('textbox', { name: 'Tìm kỹ năng', exact: true }).fill('SK990');
   await expect(page.getByRole('row').filter({ hasText: 'Draft usability skill' })).toHaveCount(1);
   expect(writes).toBe(1);
 });
@@ -305,7 +307,7 @@ test('allocation conflict translates the real backend message without losing rol
   await page.goto('/projects/PROJ001?tab=assignments');
   await page.getByRole('button', { name: 'Phân công', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nhân viên', { exact: true }).selectOption('EMP001');
+  await dialog.getByRole('combobox', { name: 'Nhân viên', exact: true }).selectOption('EMP001');
   await dialog.getByLabel('Vai trò trong dự án').fill('Advisor');
   await dialog.getByLabel('Phân bổ (%)').fill('20');
   await dialog.getByRole('button', { name: 'Lưu thay đổi' }).click();
@@ -371,13 +373,13 @@ test('employee selection updates capacity and allows choosing another person wit
   await page.goto('/projects/PROJ003?tab=assignments');
   await page.getByRole('button', { name: 'Phân công', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nhân viên', { exact: true }).selectOption('EMP002');
+  await dialog.getByRole('combobox', { name: 'Nhân viên', exact: true }).selectOption('EMP002');
   await expect(dialog.locator('.capacity-note strong')).toHaveText('0%');
   await expect(dialog.getByRole('button', { name: 'Lưu thay đổi' })).toBeDisabled();
   await dialog.getByLabel('Vai trò trong dự án').fill('Draft advisor');
-  await dialog.getByLabel('Nhân viên', { exact: true }).selectOption('EMP001');
+  await dialog.getByRole('combobox', { name: 'Nhân viên', exact: true }).selectOption('EMP001');
   await expect(dialog.locator('.capacity-note strong')).toHaveText('20%');
-  await expect(dialog.getByLabel('Nhân viên', { exact: true })).toBeEnabled();
+  await expect(dialog.getByRole('combobox', { name: 'Nhân viên', exact: true })).toBeEnabled();
   await expect(dialog.getByLabel('Phân bổ (%)')).toHaveAttribute('max', '20');
   await expect(dialog.getByLabel('Vai trò trong dự án')).toHaveValue('Draft advisor');
   await expect(dialog.getByRole('button', { name: 'Lưu thay đổi' })).toBeEnabled();
@@ -413,4 +415,75 @@ test('small mobile login and failed form remain usable with keyboard and no hori
   await page.screenshot({ path: info.outputPath('failed-form-small-mobile.png'), fullPage: true });
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: 'Thêm kỹ năng', exact: true })).toBeFocused();
+});
+
+test('assignment capacity refresh failure preserves the draft and blocks saving until retry succeeds', async ({
+  page,
+}) => {
+  await mockApi(page);
+  await page.goto('/projects/PROJ003?tab=assignments');
+  await page.getByRole('button', { name: 'Phân công', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('combobox', { name: 'Nhân viên', exact: true }).selectOption('EMP001');
+  await dialog.getByLabel('Vai trò trong dự án').fill('Draft advisor');
+  await dialog.getByLabel('Phân bổ (%)').fill('15');
+  let unavailable = true;
+  await page.route('**/api/projects/PROJ002/assignments', (route) =>
+    unavailable ? route.fulfill({ status: 503, body: 'Unavailable' }) : route.fallback(),
+  );
+  // Trigger the app's query refresh while a modal is open, simulating a background refresh.
+  await page
+    .locator('button[aria-label="Làm mới dữ liệu"]')
+    .evaluate((button: HTMLButtonElement) => button.click());
+  await expect(dialog.getByRole('alert')).toContainText('tạm thời chưa sẵn sàng');
+  await expect(dialog.getByRole('button', { name: 'Lưu thay đổi' })).toBeDisabled();
+  await expect(dialog.getByLabel('Vai trò trong dự án')).toHaveValue('Draft advisor');
+  await expect(dialog.getByLabel('Phân bổ (%)')).toHaveValue('15');
+  await expect(dialog.getByRole('combobox', { name: 'Nhân viên', exact: true })).toHaveValue(
+    'EMP001',
+  );
+  unavailable = false;
+  await dialog.getByRole('button', { name: 'Thử lại', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+  await expect(dialog.getByLabel('Vai trò trong dự án')).toHaveValue('Draft advisor');
+  await expect(dialog.getByLabel('Phân bổ (%)')).toHaveValue('15');
+  await dialog.getByRole('button', { name: 'Lưu thay đổi' }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole('row').filter({ hasText: 'Nguyen Van Bac' })).toContainText(
+    'Draft advisor',
+  );
+});
+
+test('skill catalog refresh failure keeps selected skill, level and experience until retry succeeds', async ({
+  page,
+}) => {
+  await mockApi(page);
+  await page.goto('/employees/EMP001');
+  await page.getByRole('button', { name: 'Gán kỹ năng', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('combobox', { name: 'Kỹ năng', exact: true }).selectOption('SK007');
+  await dialog.getByLabel('Mức thành thạo (1–5)').fill('4');
+  await dialog.getByLabel('Số năm kinh nghiệm').fill('2.5');
+  let unavailable = true;
+  await page.route('**/api/skills?**', (route) =>
+    unavailable ? route.fulfill({ status: 503, body: 'Unavailable' }) : route.fallback(),
+  );
+  await page
+    .locator('button[aria-label="Làm mới dữ liệu"]')
+    .evaluate((button: HTMLButtonElement) => button.click());
+  await expect(dialog.getByRole('alert')).toContainText('tạm thời chưa sẵn sàng');
+  await expect(dialog.getByRole('button', { name: 'Lưu thay đổi' })).toBeDisabled();
+  await expect(dialog.getByRole('combobox', { name: 'Kỹ năng', exact: true })).toHaveValue('SK007');
+  await expect(dialog.getByLabel('Mức thành thạo (1–5)')).toHaveValue('4');
+  await expect(dialog.getByLabel('Số năm kinh nghiệm')).toHaveValue('2.5');
+  unavailable = false;
+  await dialog.getByRole('button', { name: 'Thử lại', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+  await expect(dialog.getByLabel('Mức thành thạo (1–5)')).toHaveValue('4');
+  await expect(dialog.getByLabel('Số năm kinh nghiệm')).toHaveValue('2.5');
+  await dialog.getByRole('button', { name: 'Lưu thay đổi' }).click();
+  await expect(dialog).not.toBeVisible();
+  const row = page.getByRole('row').filter({ hasText: 'Docker' });
+  await expect(row.getByLabel('Cấp 4/5')).toBeVisible();
+  await expect(row).toContainText('2.5 năm');
 });

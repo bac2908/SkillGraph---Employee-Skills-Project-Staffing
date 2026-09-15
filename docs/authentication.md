@@ -62,6 +62,12 @@ trình duyệt gửi lên. Giới hạn allocation 100% tại database vẫn gi�
 
 ## Tài khoản và mật khẩu
 
+Trang đăng nhập chỉ nhắc người dùng liên hệ quản trị viên khi chưa có tài
+khoản hoặc quên mật khẩu. Lệnh khởi tạo Admin ở đầu tài liệu dành cho người
+vận hành, không phải bước nhân viên cần thực hiện trước mỗi lần đăng nhập.
+FE phân biệt lỗi thông tin đăng nhập, hết/thu hồi phiên và dịch vụ không kết
+nối được; xem [rà soát giao diện bước 5](usability-review.md).
+
 - Tài khoản mới hoặc được Admin đặt lại mật khẩu phải đổi mật khẩu tạm trước
   khi đọc/ghi dữ liệu nghiệp vụ. Gửi mật khẩu tạm qua kênh riêng an toàn.
 - Bấm ảnh đại diện trên cùng để mở tài khoản cá nhân và đổi mật khẩu.
@@ -91,6 +97,10 @@ trình duyệt gửi lên. Giới hạn allocation 100% tại database vẫn gi�
 - FE giữ CSRF token trong bộ nhớ, không lưu token hoặc mật khẩu trong
   localStorage/sessionStorage. Khi đăng xuất/hết phiên/đổi người dùng, cache
   dữ liệu bị hủy; các tab cùng trình duyệt được báo khi phiên thay đổi.
+- Khi kiểm tra lại phiên gặp lỗi mạng/5xx, FE giữ workspace và bản nháp nếu
+  trước đó đã xác thực, kèm thông báo thử lại. Không coi lỗi này là bằng chứng
+  hết phiên; HTTP 401 vẫn xóa cache/yêu cầu đăng nhập lại. BE vẫn xác thực và
+  kiểm tra quyền mỗi request; người chưa xác thực không được vào workspace.
 - Giới hạn mặc định: 5 lần thử cho mỗi email và 30 lần cho mỗi IP trong cửa sổ
   15 phút. Lỗi tài khoản không tồn tại, sai mật khẩu hoặc đã khóa có cùng thông
   báo. Bộ đếm được lưu trong SQLite, không mất khi khởi động lại backend.

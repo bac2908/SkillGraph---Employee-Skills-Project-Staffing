@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
@@ -55,7 +56,7 @@ export function Badge({ value }: { value: string }) {
 export function AvailabilityNote() {
   return (
     <p className="workflow-note">
-      “Sẵn sàng” là trạng thái do người quản lý cập nhật, không đồng nghĩa còn dung lượng nhận việc.
+      “Sẵn sàng” là trạng thái do quản trị viên cập nhật, không đồng nghĩa còn dung lượng nhận việc.
       Phân bổ còn lại = 100% − tổng allocation trên tất cả dự án. Trạng thái không tự đổi khi phân
       công.
     </p>
@@ -121,7 +122,7 @@ export function ErrorNotice({
     <div ref={ref} className="error-notice" role="alert" tabIndex={focus ? -1 : undefined}>
       <AlertCircle size={20} />
       <div>
-        <strong>Chưa thực hiện được yêu cầu</strong>
+        <strong>Có vấn đề khi xử lý yêu cầu</strong>
         <p>{error instanceof Error ? error.message : String(error)}</p>
         {retry && (
           <button className="text-button" onClick={retry}>
@@ -278,10 +279,16 @@ export function FormDialog({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const submitting = useRef(false);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dialog = ref.current!;
+    const opener = document.activeElement;
     dialog.showModal();
-    return () => dialog.close();
+    // Close before React removes the dialog. A passive-effect cleanup runs too
+    // late for native focus restoration when the dialog is already detached.
+    return () => {
+      dialog.close();
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    };
   }, []);
   return (
     <dialog

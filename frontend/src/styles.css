@@ -1,5 +1,12 @@
 :root {
-  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    'Plus Jakarta Sans',
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   color: #0f172a;
   background: #f8fafc;
   font-synthesis: none;
@@ -78,7 +85,9 @@ textarea {
   color: #0f172a;
   font-size: 14px;
   min-height: 44px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 textarea {

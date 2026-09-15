@@ -22,6 +22,13 @@ gồm 13 bước và runner chặn nhầm nguồn/cleanup theo namespace. **Chư
 thật**: cần điền `.env.e2e`, xác nhận instance trống riêng và khoảng dùng độc
 quyền trước khi tạo schema/dữ liệu. Unit test công cụ không thay kết quả này.
 
+Bước 5: đã sửa thông báo và thao tác có mục tiêu, không thiết kế lại FE;
+chi tiết mã nguồn và kết quả chạy cuối được lưu trong
+[rà soát lỗi và thông báo giao diện](usability-review.md). Bao gồm giữ bản
+nháp khi lưu lỗi, chặn gửi lặp, focus bàn phím, mobile, phân biệt trạng thái
+nhân viên với allocation và giải thích giới hạn gợi ý. Không dùng kết quả
+kiểm thử cô lập của bước này để đóng bước 2 hoặc bước 4 chưa chạy thật.
+
 ## Thứ tự ưu tiên đề xuất
 
 | Thứ tự | Hạng mục | Lý do | Điều kiện nghiệm thu |
